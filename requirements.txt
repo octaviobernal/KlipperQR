@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Python dependencies (pip install -r requirements.txt)
+PySide6>=6.6
+pytest>=7
+
+# System dependencies (not on PyPI):
+#   Kirigami (KDE Frameworks 6, QML module org.kde.kirigami)
+#   Breeze icon theme
+#   Debian/Ubuntu: qml6-module-org-kde-kirigami  (plus kirigami2 / qml6 packages as needed)
+#   Fedora:        kf6-kirigami
+#   Arch:          kirigami

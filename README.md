@@ -12,3 +12,24 @@ Built with Python, PySide6 and Kirigami, and distributed as a Flatpak.
 Status: early development.
 
 License: GPL-3.0-or-later.
+
+## Run from a checkout
+
+Requirements: Python 3.10+, PySide6, and Kirigami (KDE Frameworks 6) installed
+on the system. Kirigami is not a pip package; install it with your
+distribution (see the comments in `requirements.txt`). Inside the Flatpak it
+comes with the KDE runtime.
+
+```sh
+python3 -m venv --system-site-packages .venv && . .venv/bin/activate
+pip install -r requirements.txt
+python3 src/klipperqr/main.py        # the single launch command
+```
+
+Run the tests with `pytest`.
+
+## Layout
+
+- `src/klipperqr/`: Python code
+- `qml/`: QML user interface
+- `tests/`: pytest tests
