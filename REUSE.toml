@@ -5,3 +5,15 @@ path = [".gitignore", "REUSE.toml"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Octavio Bernal <octavio.bernal.q@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = "docs/spike-qr-library/*.png"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Octavio Bernal <octavio.bernal.q@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = "docs/spike-qr-library/*.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Octavio Bernal <octavio.bernal.q@gmail.com>"
+SPDX-License-Identifier = "GPL-3.0-or-later"
