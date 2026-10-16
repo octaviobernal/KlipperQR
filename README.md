@@ -26,10 +26,17 @@ pip install -r requirements.txt
 python3 src/klipperqr/main.py        # the single launch command
 ```
 
-Run the tests with `pytest`.
+Run the tests with `pytest tests`.
+
+## Run as a Flatpak
+
+Build and run instructions, runtime version and permissions are in
+[docs/flatpak.md](docs/flatpak.md).
 
 ## Layout
 
 - `src/klipperqr/`: Python code
 - `qml/`: QML user interface
 - `tests/`: pytest tests
+- `flatpak/`: Flatpak manifest and launcher
+- `docs/`: documentation

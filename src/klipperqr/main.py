@@ -6,12 +6,31 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QStandardPaths, QUrl
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
 APP_ID = "io.github.octaviobernal.KlipperQR"
-QML_MAIN = Path(__file__).resolve().parents[2] / "qml" / "Main.qml"
+
+
+def find_qml_main() -> Path:
+    """Locate Main.qml in a source checkout or in an installed location.
+
+    Checkout: <repo>/qml/Main.qml (two levels above src/klipperqr).
+    Installed (e.g. Flatpak): <prefix>/share/klipperqr/qml/Main.qml, found
+    through the XDG data directories (/app/share inside the Flatpak).
+    """
+    checkout = Path(__file__).resolve().parents[2] / "qml" / "Main.qml"
+    if checkout.is_file():
+        return checkout
+    installed = QStandardPaths.locate(
+        QStandardPaths.StandardLocation.GenericDataLocation,
+        "klipperqr/qml/Main.qml",
+    )
+    return Path(installed) if installed else checkout
+
+
+QML_MAIN = find_qml_main()
 
 
 def main() -> int:

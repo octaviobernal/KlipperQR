@@ -17,3 +17,9 @@ def test_qml_main_exists():
 
 def test_pyside6_available():
     assert importlib.util.find_spec("PySide6") is not None
+
+
+def test_manifest_has_no_broad_permissions():
+    text = (ROOT / "flatpak" / "io.github.octaviobernal.KlipperQR.yaml").read_text()
+    for forbidden in ("--share=network", "--filesystem=", "--socket=x11"):
+        assert forbidden not in text

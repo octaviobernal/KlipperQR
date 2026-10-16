@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+app-id: io.github.octaviobernal.KlipperQR
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+# PySide6 comes from the Flathub BaseApp (no pip, no network at build time).
+base: io.qt.PySide.BaseApp
+base-version: '6.11'
+command: klipperqr
+
+# See docs/flatpak.md for the justification of each permission.
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+
+modules:
+  - name: klipperqr
+    buildsystem: simple
+    build-commands:
+      - install -d /app/lib/python3.13/site-packages/klipperqr
+      - install -m644 src/klipperqr/*.py /app/lib/python3.13/site-packages/klipperqr/
+      - install -d /app/share/klipperqr/qml
+      - install -m644 qml/*.qml /app/share/klipperqr/qml/
+      - install -Dm755 flatpak/klipperqr.sh /app/bin/klipperqr
+    sources:
+      - type: dir
+        path: ..
