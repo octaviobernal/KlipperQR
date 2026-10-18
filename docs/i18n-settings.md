@@ -101,9 +101,9 @@ pyside6-lrelease translations/klipperqr_es.ts -qm build/klipperqr_es.qm
 
 Proposed follow-up work (belongs to the Phase 3 translation issue, not this
 spike): create `translations/`, load the translator in `main.py`, install
-`.qm` files in the Flatpak manifest (`pyside6-lrelease` being available at
-build time in the SDK/BaseApp is expected, not tested; committing generated
-`.qm` files is a fallback we would prefer to avoid), and add a check that `.ts` files are up to
+`.qm` files in the Flatpak manifest (`pyside6-lrelease` is available at
+build time in the BaseApp, tested in spike #9; committing generated
+`.qm` files is not needed), and add a check that `.ts` files are up to
 date.
 
 Try the spike yourself:
@@ -135,6 +135,67 @@ KLIPPERQR_LANG=es python3 docs/spike-i18n/poc_i18n.py /tmp/i18n --print  # print
   at exit (the Python backend object was released before the QML window);
   cosmetic for the throwaway script, the label values were correct.
 
+## Flatpak build: is `pyside6-lrelease` available? (spike #9, 2026-10-17)
+
+**Yes.** Tested for real with `flatpak-builder` (KDE SDK 6.11, `io.qt.PySide.BaseApp`
+6.11.2), built into a throwaway directory, not installed over the user's app.
+
+- `pyside6-lrelease` (and `pyside6-lupdate`) come from the **BaseApp**, in
+  `/app/bin`, which is on `PATH` during the build. The KDE SDK alone does
+  **not** have `pyside6-lrelease` (not on `PATH`), but it does have the C++
+  `/usr/bin/lrelease` and `/usr/bin/lconvert`. These are an alternative if the
+  BaseApp is ever dropped (expected to work for `.ts` to `.qm`, not tested).
+- Build output: `Generated 4 translation(s) (4 finished and 0 unfinished)`.
+- The built Flatpak contained
+  `/app/share/klipperqr/translations/klipperqr_es.qm`
+  (`file` reports "Qt Translation file", 433 bytes).
+- Inside the built sandbox (`flatpak-builder --run ... python3`), a
+  `QTranslator.load("klipperqr_es", "/app/share/klipperqr/translations")` returned
+  `True` and `QCoreApplication.translate("Poc", "Translation spike")` gave
+  "Prueba de traducción".
+- No network is needed and no extra permission. `--disable-rofiles-fuse` was
+  needed on this machine only for the builder (see docs/flatpak.md).
+
+Manifest lines that work (added to `build-commands` of the `klipperqr` module;
+this is what the translation issue should add, with the real `translations/`
+folder instead of the spike file). They are **not** in the real manifest yet,
+because this spike must not ship the spike catalog:
+
+```yaml
+      - install -d /app/share/klipperqr/translations
+      - pyside6-lrelease docs/spike-i18n/klipperqr_es.ts -qm /app/share/klipperqr/translations/klipperqr_es.qm
+```
+
+For several languages, a loop works in `simple` build commands (expected, not
+tested):
+
+```yaml
+      - for ts in translations/*.ts; do pyside6-lrelease "$ts" -qm "/app/share/klipperqr/translations/$(basename "${ts%.ts}").qm"; done
+```
+
+Because the `.qm` is built from the `.ts` at build time, no generated `.qm` is
+committed (the preferred option). Flathub reviewers' preference was not checked;
+building from source in the manifest is the normal Flathub expectation, so it
+is expected to be accepted (not verified).
+
+### What happens when a `.qm` is missing (for #7)
+
+It fails **silently**. Tested in the built sandbox:
+`QTranslator.load("klipperqr_es", "/nonexistent")` returns `False`, raises
+nothing and prints nothing, and `translate()` returns the English source
+string. The app would start normally in English. Also, `pyside6-lrelease` only
+fails the build if the `.ts` is missing or invalid; a forgotten manifest line
+produces no error at all.
+
+Checks #7 (CI) can add:
+
+1. After the Flatpak build, assert that
+   `build-dir/files/share/klipperqr/translations/*.qm` exists for every
+   `translations/*.ts` file (fail if the counts differ).
+2. In `main.py`, when the locale is not English and `QTranslator.load()`
+   returns `False`, log a warning without any user content (not clipboard text).
+   Do not treat it as an error for `en`.
+
 ## Risks
 
 1. **Non-standard KDE workflow.** KDE's translation teams work with gettext
@@ -145,6 +206,7 @@ KLIPPERQR_LANG=es python3 docs/spike-i18n/poc_i18n.py /tmp/i18n --print  # print
    `lconvert` to PO (expected, not tested).
 3. **`.qm` files are build output.** The Flatpak build must run
    `pyside6-lrelease` or the app ships English only; a missing translation fails silently.
+   Verified available in the Flatpak build: see "Flatpak build" above.
 4. **Python extraction limits.** `pyside6-lupdate` only extracts string
    literals; `self.tr(variable)` or text built by concatenation is missed.
    Use plain literals and `%1`/`%n` placeholders.
