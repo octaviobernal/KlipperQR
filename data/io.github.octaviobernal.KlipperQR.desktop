@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+[Desktop Entry]
+Type=Application
+Name=KlipperQR
+GenericName=Clipboard QR Code Generator
+Comment=Turn copied text or links into a QR code
+Exec=klipperqr
+Icon=io.github.octaviobernal.KlipperQR
+Terminal=false
+Categories=Utility;Qt;KDE;
+Keywords=QR;clipboard;qrcode;
+StartupNotify=true

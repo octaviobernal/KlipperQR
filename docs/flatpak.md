@@ -42,3 +42,23 @@ If the build fails with a FUSE/rofiles error, add `--disable-rofiles-fuse`.
 
 Not granted: network, filesystem access, D-Bus names. Clipboard/Klipper
 permissions are decided in issue #3.
+
+## App ID and metadata files
+
+The app ID is `io.github.octaviobernal.KlipperQR`. In code it is defined once
+as `APP_ID` in `src/klipperqr/main.py`. File names cannot import it, so
+`tests/test_metadata.py` checks that the manifest, desktop file, AppStream
+file and icon all use that same ID.
+
+| File | Installed to (in the Flatpak) |
+| --- | --- |
+| `data/io.github.octaviobernal.KlipperQR.desktop` | `/app/share/applications/` |
+| `data/io.github.octaviobernal.KlipperQR.metainfo.xml` | `/app/share/metainfo/` |
+| `data/io.github.octaviobernal.KlipperQR.svg` (placeholder icon, GPL-3.0-or-later) | `/app/share/icons/hicolor/scalable/apps/` |
+
+Check them with:
+
+```sh
+desktop-file-validate data/io.github.octaviobernal.KlipperQR.desktop
+appstreamcli validate --no-net data/io.github.octaviobernal.KlipperQR.metainfo.xml
+```

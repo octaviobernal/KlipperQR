@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+SPDX-License-Identifier: CC0-1.0
+-->
+<component type="desktop-application">
+  <id>io.github.octaviobernal.KlipperQR</id>
+  <name>KlipperQR</name>
+  <summary>Turn copied text or links into a QR code</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="io.github.octaviobernal">
+    <name>Octavio Bernal</name>
+  </developer>
+  <description>
+    <p>KlipperQR turns the text or link you just copied into a QR code that you can scan with your phone.</p>
+  </description>
+  <launchable type="desktop-id">io.github.octaviobernal.KlipperQR.desktop</launchable>
+  <url type="homepage">https://github.com/octaviobernal/KlipperQR</url>
+  <url type="bugtracker">https://github.com/octaviobernal/KlipperQR/issues</url>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <content_rating type="oars-1.1"/>
+</component>

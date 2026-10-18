@@ -39,4 +39,5 @@ Build and run instructions, runtime version and permissions are in
 - `qml/`: QML user interface
 - `tests/`: pytest tests
 - `flatpak/`: Flatpak manifest and launcher
+- `data/`: desktop file, AppStream metainfo, placeholder icon
 - `docs/`: documentation

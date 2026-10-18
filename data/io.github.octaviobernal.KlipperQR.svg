@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+SPDX-License-Identifier: GPL-3.0-or-later
+Placeholder icon; the final icon is a later task.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect x="8" y="8" width="112" height="112" rx="16" fill="#ffffff" stroke="#3daee9" stroke-width="6"/>
+  <g fill="#232629">
+    <rect x="24" y="24" width="32" height="32"/>
+    <rect x="72" y="24" width="32" height="32"/>
+    <rect x="24" y="72" width="32" height="32"/>
+    <rect x="72" y="72" width="14" height="14"/>
+    <rect x="90" y="90" width="14" height="14"/>
+  </g>
+  <g fill="#ffffff">
+    <rect x="32" y="32" width="16" height="16"/>
+    <rect x="80" y="32" width="16" height="16"/>
+    <rect x="32" y="80" width="16" height="16"/>
+  </g>
+</svg>
