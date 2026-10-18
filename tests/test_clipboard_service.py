@@ -222,3 +222,212 @@ QtObject {
     assert obj.property("viaState") == 1
     assert obj.property("viaShort") == 1
     assert obj.property("defined") is True
+
+
+# --- issue #41: unchanged text, own changes, explicit vs automatic reads ----
+
+Outcome = ClipboardService.Outcome
+OTHER = "other-test-text-0815"
+
+
+def image_mime(color=0):
+    mime = QMimeData()
+    image = QImage(4, 4, QImage.Format.Format_RGB32)
+    image.fill(color)
+    mime.setImageData(image)
+    return mime
+
+
+def test_auto_read_same_text_twice_is_unchanged(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    texts = []
+    service.textChanged.connect(lambda: texts.append(1))
+    service.autoRead()
+    assert service.outcome == Outcome.UNCHANGED
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+    assert texts == []
+
+
+def test_auto_read_different_text_is_new(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = text_mime(OTHER)
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.text == OTHER
+
+
+def test_auto_read_empty_after_text_keeps_text(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    for mime in (QMimeData(), None, text_mime("")):
+        fake.mime = mime
+        service.autoRead()
+        assert service.outcome == Outcome.IGNORED
+        assert service.state == State.TEXT
+        assert service.text == SECRET
+
+
+def test_auto_read_image_after_text_keeps_text(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = image_mime()
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+
+
+def test_auto_read_failure_keeps_text(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.error = RuntimeError(SECRET)
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+
+
+def test_same_text_after_image_is_still_unchanged(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = image_mime()
+    service.autoRead()
+    fake.mime = text_mime(SECRET)
+    service.autoRead()
+    assert service.outcome == Outcome.UNCHANGED
+
+
+def test_own_change_is_ignored(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = image_mime(0xFFFFFF)  # the app "copies its QR image"
+    service.markOwnChange()
+    service.autoRead()
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+
+
+def test_own_change_then_other_copy_is_handled(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = image_mime(0xFFFFFF)
+    service.markOwnChange()
+    fake.mime = text_mime(OTHER)  # user copies something else later
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.text == OTHER
+
+
+def test_own_change_then_foreign_image_is_ignored_but_not_hidden(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = image_mime(0xFFFFFF)
+    service.markOwnChange()
+    fake.mime = image_mime(0x000000)
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED  # not text: still never replaces
+    assert service.text == SECRET
+
+
+def test_explicit_read_after_unchanged_text_gives_full_result(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    results = []
+    service.readFinished.connect(results.append)
+    service.read()
+    assert results == [Outcome.EXPLICIT]
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+
+
+def test_explicit_read_reports_empty_and_not_text(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = QMimeData()
+    service.read()
+    assert (service.outcome, service.state) == (Outcome.EXPLICIT, State.EMPTY)
+    assert service.text == "" and service.message
+    fake.mime = image_mime()
+    service.read()
+    assert (service.outcome, service.state) == (Outcome.EXPLICIT, State.NOT_TEXT)
+
+
+def test_explicit_read_of_own_change_still_reports_not_text(app):
+    fake = FakeClipboard(image_mime())
+    service = ClipboardService(fake)
+    service.markOwnChange()
+    service.read()
+    assert service.state == State.NOT_TEXT
+
+
+def test_clear_keeps_marker_so_same_text_is_not_new(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    service.clear()
+    assert service.state == State.NOT_READ
+    assert service.text == ""
+    service.autoRead()
+    assert service.outcome == Outcome.UNCHANGED
+    assert service.text == ""
+    service.read()  # only an explicit Paste brings it back
+    assert service.text == SECRET
+
+
+def test_clear_then_changed_text_is_new(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    service.clear()
+    fake.mime = text_mime(OTHER)
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.text == OTHER
+
+
+def test_forget_last_read_makes_same_text_new(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    service.forgetLastRead()
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+
+
+def test_no_plain_text_kept_for_comparison(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    service.markOwnChange()
+    held = [v for v in vars(service).values() if isinstance(v, (str, bytes))]
+    assert held.count(SECRET) == 1  # only `_text` (the shown text)
+    assert service._last_digest != SECRET.encode()
+    assert SECRET not in repr(service)
+
+
+def test_outcome_enum_resolves_in_qml(app):
+    from PySide6.QtCore import QUrl
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    engine = QQmlEngine()
+    component = QQmlComponent(engine)
+    component.setData(
+        b"import QtQuick\nimport KlipperQR\n"
+        b"QtObject { property int a: ClipboardService.Outcome.NEW_TEXT }",
+        QUrl("inline.qml"),
+    )
+    obj = component.create()
+    assert obj is not None, component.errorString()
+    assert obj.property("a") == Outcome.NEW_TEXT

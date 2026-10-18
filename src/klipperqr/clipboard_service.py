@@ -12,8 +12,27 @@ Privacy (see CONTRIBUTING.md): the clipboard text is kept in memory only. It is
 never logged, written to disk, stored in settings or sent anywhere, and it
 never appears in an exception message or in repr(). There is deliberately no
 logging in this module.
+
+Refocus rules (issue #41), implemented only here; the UI just reacts:
+
+* read()       explicit read (Paste button). Always gives a full result:
+               state/text/message are updated, outcome is EXPLICIT.
+* autoRead()   read on window focus. Compares with the previous text read and
+               only touches state/text when the text is NEW. Unchanged text,
+               an empty or non-text clipboard, a failed read and the app's own
+               clipboard changes leave state/text exactly as they were, so a
+               binding on them can never wipe the QR or the user's edits.
+* markOwnChange()  call right AFTER the app put something on the clipboard
+               (e.g. Copy image); autoRead() then ignores that content.
+* clear()      empties state/text but KEEPS the last-read marker, so the same
+               clipboard text does not come back on the next focus (Clear, #26).
+* forgetLastRead()  drops the marker, so the same text counts as new again.
+
+The "last read" marker and the own-change marker are SHA-256 digests held in
+memory only; no clipboard text is stored for the comparison.
 """
 
+import hashlib
 from enum import IntEnum
 
 from PySide6.QtCore import (
@@ -47,7 +66,18 @@ class ClipboardService(QObject):
         NOT_TEXT = 3  # clipboard holds something else, e.g. an image
         FAILED = 4  # the read itself failed
 
+    @QEnum
+    class Outcome(IntEnum):
+        NONE = 0  # no read yet
+        EXPLICIT = 1  # explicit read: show state/text/message as they are
+        NEW_TEXT = 2  # automatic read found different text: replace the UI text
+        UNCHANGED = 3  # automatic read, same text as before: do nothing
+        IGNORED = 4  # automatic read, empty/not text/failed/own change: do nothing
+
     stateChanged = Signal()
+    outcomeChanged = Signal()
+    # Emitted after every read with the Outcome value (also if it did not change).
+    readFinished = Signal(int)
     textChanged = Signal()
     messageChanged = Signal()
 
@@ -60,6 +90,9 @@ class ClipboardService(QObject):
         self._clipboard = clipboard
         self._state = ClipboardService.State.NOT_READ
         self._text = ""
+        self._outcome = ClipboardService.Outcome.NONE
+        self._last_digest = None  # digest of the text of the previous text read
+        self._own_digest = None  # digest of clipboard content the app set itself
 
     def __repr__(self) -> str:
         # Never include the text.
@@ -70,6 +103,11 @@ class ClipboardService(QObject):
     @Property(int, notify=stateChanged)
     def state(self) -> int:
         return int(self._state)
+
+    @Property(int, notify=outcomeChanged)
+    def outcome(self) -> int:
+        """Outcome of the most recent read (see the Outcome enum)."""
+        return int(self._outcome)
 
     @Property(str, notify=textChanged)
     def text(self) -> str:
@@ -91,39 +129,106 @@ class ClipboardService(QObject):
 
     @Slot()
     def read(self) -> None:
-        """Read the clipboard now. Never raises; the result is in `state`."""
+        """Explicit read (Paste). Always a full result, even if unchanged."""
+        Outcome = ClipboardService.Outcome
+        state, text, _mime = self._fetch()
+        if state == ClipboardService.State.TEXT:
+            self._last_digest = _digest(text)
+        self._own_digest = None
+        self._set_result(state, text)
+        self._set_outcome(Outcome.EXPLICIT)
+
+    @Slot()
+    def autoRead(self) -> None:  # noqa: N802 - QML-visible name
+        """Read on window focus. Only replaces state/text when the text is new."""
+        Outcome = ClipboardService.Outcome
+        State = ClipboardService.State
+        state, text, mime = self._fetch()
+        if self._own_digest is not None:
+            if _mime_digest(mime) == self._own_digest:
+                self._set_outcome(Outcome.IGNORED)
+                return
+            self._own_digest = None  # something else is on the clipboard now
+        if state != State.TEXT:
+            self._set_outcome(Outcome.IGNORED)
+            return
+        digest = _digest(text)
+        if digest == self._last_digest:
+            self._set_outcome(Outcome.UNCHANGED)
+            return
+        self._last_digest = digest
+        self._set_result(state, text)
+        self._set_outcome(Outcome.NEW_TEXT)
+
+    @Slot()
+    def markOwnChange(self) -> None:  # noqa: N802
+        """Call right after the app put data on the clipboard.
+
+        The next autoRead() that still sees exactly this content is ignored.
+        Different content (copied elsewhere later) is handled normally.
+        """
+        try:
+            clipboard = self._clipboard
+            if clipboard is None:
+                clipboard = QGuiApplication.clipboard()
+            self._own_digest = _mime_digest(clipboard.mimeData())
+        except Exception:  # noqa: BLE001 - deliberately drop the details
+            self._own_digest = None
+
+    @Slot()
+    def clear(self) -> None:
+        """Forget the shown text/state but keep the last-read marker."""
+        self._set_result(ClipboardService.State.NOT_READ, "")
+        self._set_outcome(ClipboardService.Outcome.NONE)
+
+    @Slot()
+    def forgetLastRead(self) -> None:  # noqa: N802
+        """Drop the last-read marker: the same text counts as new next time."""
+        self._last_digest = None
+
+    def _fetch(self):
+        """Return (state, text, mime) from the clipboard. Never raises."""
         State = ClipboardService.State
         text = ""
+        mime = None
         try:
             clipboard = self._clipboard
             if clipboard is None:
                 clipboard = QGuiApplication.clipboard()
             mime = clipboard.mimeData()
             if mime is None:
-                new_state = State.EMPTY
+                state = State.EMPTY
             elif mime.hasText():
                 text = mime.text()
-                new_state = State.TEXT if text else State.EMPTY
+                state = State.TEXT if text else State.EMPTY
             elif mime.formats():
-                new_state = State.NOT_TEXT
+                state = State.NOT_TEXT
             else:
-                new_state = State.EMPTY
+                state = State.EMPTY
         except Exception:  # noqa: BLE001 - deliberately drop the details
             text = ""
-            new_state = State.FAILED
-        self._set_result(new_state, text)
+            mime = None
+            state = State.FAILED
+        return state, text, mime
 
     def attach_window(self, window: QWindow) -> None:
         """Read whenever `window` becomes the active (focused) window."""
         window.activeChanged.connect(lambda: self._on_active_changed(window))
         if window.isActive():  # already focused: no activeChanged will come
-            self.read()
+            self.autoRead()
 
     def _on_active_changed(self, window: QWindow) -> None:
         if window.isActive():
-            self.read()
+            self.autoRead()
 
     # --- internals --------------------------------------------------------
+
+    def _set_outcome(self, outcome: "ClipboardService.Outcome") -> None:
+        changed = outcome != self._outcome
+        self._outcome = outcome
+        if changed:
+            self.outcomeChanged.emit()
+        self.readFinished.emit(int(outcome))
 
     def _set_result(self, state: "ClipboardService.State", text: str) -> None:
         old_message = self.message
@@ -135,3 +240,18 @@ class ClipboardService(QObject):
             self.textChanged.emit()
         if self.message != old_message:
             self.messageChanged.emit()
+
+
+def _digest(text: str) -> bytes:
+    return hashlib.sha256(text.encode("utf-8", "surrogatepass")).digest()
+
+
+def _mime_digest(mime) -> bytes | None:
+    """Digest of all formats and their bytes; None if nothing to compare."""
+    if mime is None:
+        return None
+    h = hashlib.sha256()
+    for fmt in sorted(mime.formats()):
+        h.update(fmt.encode("utf-8"))
+        h.update(bytes(mime.data(fmt)))
+    return h.digest()

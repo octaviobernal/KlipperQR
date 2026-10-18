@@ -85,6 +85,19 @@ In-app hint (short, wrap in `qsTr()`):
 
 > Copy some text in another app, then come back here or press Paste. KlipperQR can only read the clipboard while this window is active.
 
+## Refocus rules (ClipboardService, issue #41)
+
+| Call | Used by | Behaviour |
+| --- | --- | --- |
+| `read()` | Paste button | Always a full result (text, empty, not text, failed); `outcome` = `EXPLICIT`. |
+| `autoRead()` | window focus | Replaces `state`/`text` only if the text differs from the previous text read (`outcome` = `NEW_TEXT`). Same text = `UNCHANGED`; empty, not text, failed or the app's own change = `IGNORED`; in both cases `state`/`text` stay as they were. |
+| `markOwnChange()` | Copy image (#27) | Call right after putting data on the clipboard; `autoRead()` ignores that exact content. Other content is handled normally. |
+| `clear()` | Clear (#26) | Empties `state`/`text` but keeps the last-read marker, so the same text does not return on focus. |
+| `forgetLastRead()` | (rarely) | Drops the marker: the same text counts as new next time. Do not use it for Clear. |
+
+The comparison keeps only SHA-256 digests in memory, never extra copies of the text.
+Behaviour on a real Wayland session and in the Flatpak: expected, not tested.
+
 ## Proposed follow-up issues (for the BA)
 
 1. Clipboard service (Python QObject): read text via `QClipboard` on demand and on window focus; empty/non-text handling; no logging/persistence; unit tests with a fake clipboard.
