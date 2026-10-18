@@ -15,7 +15,12 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import (
-    QCoreApplication, QLocale, QObject, QSettings, QTranslator, QUrl, Property,
+    Property,
+    QLocale,
+    QObject,
+    QSettings,
+    QTranslator,
+    QUrl,
 )
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine

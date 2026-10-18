@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Tool configuration only; the app is not installed as a Python package.
+
+[tool.pytest.ini_options]
+# Only collect from tests/ so a bare `pytest` ignores the local build-dir/.
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+# E/F: pycodestyle and pyflakes errors, I: import sorting, W: warnings.
+select = ["E", "F", "I", "W"]

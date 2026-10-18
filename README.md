@@ -26,7 +26,8 @@ pip install -r requirements.txt
 python3 src/klipperqr/main.py        # the single launch command
 ```
 
-Run the tests with `pytest tests`.
+Run the tests with `pytest`. All checks that CI runs, and how to run them
+locally, are listed in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Run as a Flatpak
 

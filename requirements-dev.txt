@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+# Tools for the checks in CONTRIBUTING.md (pip install -r requirements-dev.txt)
+-r requirements.txt
+ruff>=0.5
+reuse>=4
