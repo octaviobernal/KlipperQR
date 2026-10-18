@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Spike (#3): how KlipperQR reads the clipboard
 
-Status: decision proposed. Focused Qt read confirmed on the host; Flatpak run still to confirm (see "Not verified").
+Status: decision proposed. Focused Qt read confirmed on host and in Flatpak.
 
 ## How it was tested
 
@@ -22,7 +22,7 @@ The sandbox permissions used are those in `flatpak/*.yaml` (no D-Bus access).
 
 | Option | Works? | When | Flatpak permission | Privacy |
 | --- | --- | --- | --- | --- |
-| (a) Qt `QClipboard` read | Window NOT focused: **no**. `hasText` was false, text empty, on host and in Flatpak. Focused: **not verified by me** (see below); expected yes, this is Wayland's rule. | Only while our window has keyboard focus | None (Wayland socket already granted) | Best: the app sees the clipboard only while the user is looking at it |
+| (a) Qt `QClipboard` read | Window NOT focused: **no**. `hasText` was false, text empty, on host and in Flatpak. Focused: **yes**, verified on host and in Flatpak. | Only while our window has keyboard focus | None (Wayland socket already granted) | Best: the app sees the clipboard only while the user is looking at it |
 | (b) Explicit Paste / Refresh button (same Qt read, triggered by the user) | Same API as (a). A click or key press means the window is focused, so it is the reliable form of (a). Focused behaviour not verified by me. | On user action | None | Best: reads only when the user asks |
 | (c) Klipper over D-Bus (`getClipboardContents`) | **Yes, even unfocused**, on the host. In the Flatpak it **fails** (`ServiceUnknown`) with our current permissions and **works** after adding `--talk-name=org.kde.klipper`. | Any time | `--talk-name=org.kde.klipper` | Worst: any time, without the user acting, and the same permission lets the app read the clipboard of every other app; it can also `setClipboardContents` and `clearClipboardHistory`. Only works if Klipper runs (Plasma only). Flathub reviewers usually question talk-name permissions. |
 
@@ -50,7 +50,7 @@ data); never log or store the text; handle empty / non-text clipboard
 - Verified on the host (Plasma Wayland): once the test window is really mapped
   (`QRasterWindow`; a bare `QWindow` is never shown on Wayland), it gets focus and
   the Qt read returns `focused=True`, `hasText=True`, with the correct length.
-- Still open: the same focused read inside the Flatpak. Please verify (30 seconds):
+- Verified in the Flatpak too (user-run): `focused=True`, Qt read `(True, N)`, Klipper `ServiceUnknown`. Steps used:
   1. `wl-copy "dummy-test-text"`
   2. `python3 docs/spike-clipboard/poc_clipboard.py 20`
   3. Click the small window; the output must change to `focused=True` and `qt(hasText,len)=(True, 15)`.
