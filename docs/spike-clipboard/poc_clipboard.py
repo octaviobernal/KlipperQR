@@ -12,7 +12,7 @@ Run: python3 poc_clipboard.py [seconds]
 
 import sys
 
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QRect, Qt, QTimer
 from PySide6.QtDBus import QDBusConnection, QDBusInterface
 from PySide6.QtGui import QColor, QGuiApplication, QRasterWindow
 
@@ -25,23 +25,27 @@ def qt_read(app):
 
 
 def klipper_read():
-    iface = QDBusInterface("org.kde.klipper", "/klipper",
-                           "org.kde.klipper.klipper",
-                           QDBusConnection.sessionBus())
+    iface = QDBusInterface(
+        "org.kde.klipper",
+        "/klipper",
+        "org.kde.klipper.klipper",
+        QDBusConnection.sessionBus(),
+    )
     if not iface.isValid():
         return "unavailable: " + iface.lastError().name()
     reply = iface.call("getClipboardContents")
     args = reply.arguments()
     if reply.type().name != "ReplyMessage" and not args:
         return "error: " + reply.errorName()
-    return "ok len=%d" % len(args[0])
+    return f"ok len={len(args[0])}"
 
 
 def _paint(win):
     from PySide6.QtGui import QPainter
+
     p = QPainter(win)
-    p.fillRect(win.geometry().__class__(0, 0, win.width(), win.height()), QColor('lightgray'))
-    p.drawText(20, 55, 'click me')
+    p.fillRect(QRect(0, 0, win.width(), win.height()), QColor("lightgray"))
+    p.drawText(20, 55, "click me")
     p.end()
 
 
@@ -60,8 +64,11 @@ def main():
     def probe():
         n[0] += 1
         focused = app.applicationState() == Qt.ApplicationState.ApplicationActive
-        print("t=%ds focused=%s (a) qt(hasText,len)=%s (c) klipper=%s"
-              % (n[0], focused, qt_read(app), klipper_read()), flush=True)
+        print(
+            f"t={n[0]}s focused={focused} (a) qt(hasText,len)={qt_read(app)} "
+            f"(c) klipper={klipper_read()}",
+            flush=True,
+        )
 
     t = QTimer()
     t.timeout.connect(probe)
@@ -70,4 +77,5 @@ def main():
     app.exec()
 
 
-main()
+if __name__ == "__main__":
+    main()

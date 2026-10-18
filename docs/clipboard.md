@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Spike (#3): how KlipperQR reads the clipboard
 
-Status: decision proposed. Focused Qt read confirmed on host and in Flatpak.
+Status: decision made. Focused Qt read confirmed on host and in Flatpak.
 
 ## How it was tested
 
@@ -22,9 +22,9 @@ The sandbox permissions used are those in `flatpak/*.yaml` (no D-Bus access).
 
 | Option | Works? | When | Flatpak permission | Privacy |
 | --- | --- | --- | --- | --- |
-| (a) Qt `QClipboard` read | Window NOT focused: **no**. `hasText` was false, text empty, on host and in Flatpak. Focused: **yes**, verified on host and in Flatpak. | Only while our window has keyboard focus | None (Wayland socket already granted) | Best: the app sees the clipboard only while the user is looking at it |
-| (b) Explicit Paste / Refresh button (same Qt read, triggered by the user) | Same API as (a). A click or key press means the window is focused, so it is the reliable form of (a). Focused behaviour not verified by me. | On user action | None | Best: reads only when the user asks |
-| (c) Klipper over D-Bus (`getClipboardContents`) | **Yes, even unfocused**, on the host. In the Flatpak it **fails** (`ServiceUnknown`) with our current permissions and **works** after adding `--talk-name=org.kde.klipper`. | Any time | `--talk-name=org.kde.klipper` | Worst: any time, without the user acting, and the same permission lets the app read the clipboard of every other app; it can also `setClipboardContents` and `clearClipboardHistory`. Only works if Klipper runs (Plasma only). Flathub reviewers usually question talk-name permissions. |
+| (a) Qt `QClipboard` read | Window NOT focused: **no**. `hasText` was false, text empty, on host and in Flatpak. Focused: **yes**, verified on host and in Flatpak (see Verification log). | Only while our window has keyboard focus | None (Wayland socket already granted) | Best: the app sees the clipboard only while the user is looking at it |
+| (b) Explicit Paste / Refresh button (same Qt read, triggered by the user) | Same Qt API as (a), so it works whenever (a) works while focused (verified through the focused read). A click or key press implies the window is focused. No real Paste button has been tested yet, because the app UI does not have one. | On user action | None | Best: reads only when the user asks |
+| (c) Klipper over D-Bus (`getClipboardContents`) | Host: a focused run on 2026-10-17 returned `ok` (length only). Host while unfocused: *expected, not re-tested*. Flatpak with current permissions: **fails** (`ServiceUnknown`), user-run. Flatpak after adding `--talk-name=org.kde.klipper`: *expected to work, not tested*. | Any time (expected) | `--talk-name=org.kde.klipper` | Worst: any time, without the user acting, and the same permission lets the app read the clipboard of every other app; it can also `setClipboardContents` and `clearClipboardHistory`. Only works if Klipper runs (Plasma only). Flathub reviewers usually question talk-name permissions. |
 
 ## Recommendation
 
@@ -35,7 +35,7 @@ the app window is focused and when the user presses "Paste from clipboard"
 Why, in plain words: on Wayland an app is not allowed to peek at the clipboard
 while you are working in another window; that rule exists to protect
 passwords. The Qt way respects that rule, needs no extra Flatpak permission,
-works on every desktop and on X11, and is easier to get through Flathub
+is expected to work on other desktops and on X11 (not tested), and is easier to get through Flathub
 review. Klipper would work in the background, but it needs a special hole in
 the sandbox and gives KlipperQR more access than a QR generator should have.
 Cost: the QR is not updated by itself while you copy things in another app;
@@ -45,19 +45,32 @@ Implementation notes for Phase 1: read on the UI thread (it is fast, local
 data); never log or store the text; handle empty / non-text clipboard
 (`mimeData().hasText()`); `QClipboard.dataChanged` is only useful while focused.
 
-## Not verified
+## Verification log
 
-- Verified on the host (Plasma Wayland): once the test window is really mapped
-  (`QRasterWindow`; a bare `QWindow` is never shown on Wayland), it gets focus and
-  the Qt read returns `focused=True`, `hasText=True`, with the correct length.
-- Verified in the Flatpak too (user-run): `focused=True`, Qt read `(True, N)`, Klipper `ServiceUnknown`. Steps used:
-  1. `wl-copy "dummy-test-text"`
-  2. `python3 docs/spike-clipboard/poc_clipboard.py 20`
-  3. Click the small window; the output must change to `focused=True` and `qt(hasText,len)=(True, 15)`.
-  4. For the Flatpak, run the same script with
-     `flatpak run --command=python3 --filesystem=$PWD/docs/spike-clipboard:ro io.github.octaviobernal.KlipperQR $PWD/docs/spike-clipboard/poc_clipboard.py 20`.
-  If this fails, the recommendation must be revisited (fallback: `Ctrl+V` into a text field).
-- X11 session, and non-Plasma Wayland compositors: not tested.
+Done (2026-10-17):
+
+- Host (Plasma Wayland, PySide6 6.10.2): once the test window is really mapped
+  (`QRasterWindow`; a bare `QWindow` is never shown on Wayland), it gets focus
+  and the Qt read returns `focused=True`, `hasText=True`, with the correct length.
+  Klipper over D-Bus also answered (length only) in the focused run.
+- Flatpak (user-run): `focused=True`, Qt read `(True, N)`, Klipper `ServiceUnknown`.
+- Unfocused Qt read returns no text, on host and in Flatpak. Focus was lost by
+  clicking/activating another window while the PoC kept running.
+
+Steps used:
+
+1. `wl-copy "dummy-test-text"`
+2. `python3 docs/spike-clipboard/poc_clipboard.py 20`
+3. Click the small window: output shows `focused=True` and `qt(hasText,len)=(True, 15)`.
+4. Flatpak: `flatpak run --command=python3 --filesystem=$PWD/docs/spike-clipboard:ro io.github.octaviobernal.KlipperQR $PWD/docs/spike-clipboard/poc_clipboard.py 20`.
+
+Not verified:
+
+- X11 session.
+- Non-Plasma Wayland compositors.
+- A real Paste button in the app UI.
+- Klipper unfocused on the host, and in Flatpak with `--talk-name=org.kde.klipper`
+  (expected to work, not tested).
 
 ## Limits text (draft)
 
