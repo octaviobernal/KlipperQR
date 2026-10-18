@@ -95,6 +95,22 @@ In-app hint (short, wrap in `qsTr()`):
 | `clear()` | Clear (#26) | Empties `state`/`text` but keeps the last-read marker, so the same text does not return on focus. |
 | `forgetLastRead()` | (rarely) | Drops the marker: the same text counts as new next time. Do not use it for Clear. |
 
+Details of the markers:
+
+- `read()` sets the last-read marker to the digest of the text it shows, or
+  drops it when the result is empty, not text or failed. So if the user saw the
+  empty message and then copies the old text again, the next focus shows it.
+  `clear()` is different on purpose: it keeps the marker.
+- `markOwnChange()` only changes a result when the app's own clipboard content
+  includes text (for example Copy image adding a text format on some
+  platforms). A pure image is already ignored by `autoRead()` because it is not
+  text; there the mark changes nothing. The mark is dropped as soon as
+  different content is seen.
+- The own-content digest covers every format plus, for images, the pixel bytes
+  (Qt's `application/x-qt-image` exposes 0 bytes through `data()`, so a black
+  and a white image would otherwise hash the same).
+  Whether a given platform adds text to a copied image: expected, not tested.
+
 The comparison keeps only SHA-256 digests in memory, never extra copies of the text.
 Behaviour on a real Wayland session and in the Flatpak: expected, not tested.
 

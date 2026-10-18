@@ -14,7 +14,7 @@ import pytest  # noqa: E402
 from PySide6.QtCore import QMimeData  # noqa: E402
 from PySide6.QtGui import QGuiApplication, QImage, QWindow  # noqa: E402
 
-from klipperqr.clipboard_service import ClipboardService  # noqa: E402
+from klipperqr.clipboard_service import ClipboardService, _mime_digest  # noqa: E402
 
 State = ClipboardService.State
 SECRET = "secret-test-text-4711"
@@ -431,3 +431,119 @@ def test_outcome_enum_resolves_in_qml(app):
     obj = component.create()
     assert obj is not None, component.errorString()
     assert obj.property("a") == Outcome.NEW_TEXT
+
+
+# --- review fixes for #41 -----------------------------------------------------
+
+
+def text_and_image_mime(text, color=0xFFFFFF):
+    """Own content that includes text, like Copy image on some platforms."""
+    mime = image_mime(color)
+    mime.setText(text)
+    return mime
+
+
+def test_text_comes_back_after_empty_explicit_read(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()  # (1) sees the text
+    fake.mime = QMimeData()
+    service.read()  # (2) cleared elsewhere, Paste shows the empty message
+    assert service.state == State.EMPTY
+    fake.mime = text_mime(SECRET)  # (3) copied again
+    service.autoRead()  # (4) refocus must show it
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.state == State.TEXT
+    assert service.text == SECRET
+
+
+def test_text_comes_back_after_not_text_or_failed_explicit_read(app):
+    for bad in (image_mime(), RuntimeError(SECRET)):
+        fake = FakeClipboard(text_mime(SECRET))
+        service = ClipboardService(fake)
+        service.autoRead()
+        if isinstance(bad, Exception):
+            fake.error = bad
+        else:
+            fake.mime = bad
+        service.read()
+        assert service.state in (State.NOT_TEXT, State.FAILED)
+        fake.error = None
+        fake.mime = text_mime(SECRET)
+        service.autoRead()
+        assert service.outcome == Outcome.NEW_TEXT
+        assert service.state == State.TEXT
+
+
+def test_own_change_with_text_is_ignored_only_when_marked(app):
+    results = {}
+    for marked in (True, False):
+        fake = FakeClipboard(text_mime(SECRET))
+        service = ClipboardService(fake)
+        service.autoRead()
+        fake.mime = text_and_image_mime(OTHER)
+        if marked:
+            service.markOwnChange()
+        service.autoRead()
+        results[marked] = (service.outcome, service.text)
+    assert results[True] == (Outcome.IGNORED, SECRET)
+    assert results[False] == (Outcome.NEW_TEXT, OTHER)
+
+
+def test_own_change_with_text_and_html_is_ignored_when_marked(app):
+    mime = text_mime(OTHER)
+    mime.setHtml("<b>x</b>")
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = mime
+    service.markOwnChange()
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED
+    assert service.text == SECRET
+
+
+def test_own_mark_is_dropped_when_different_content_arrives(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    own = text_and_image_mime(OTHER)
+    fake.mime = own
+    service.markOwnChange()
+    fake.mime = text_mime("third-test-text-42")  # something else arrives
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service._own_digest is None
+    fake.mime = own  # the old own content comes back: no longer protected
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.text == OTHER
+
+
+def test_digest_differs_for_different_images(app):
+    black, white = image_mime(0x000000), image_mime(0xFFFFFF)
+    assert _mime_digest(black) != _mime_digest(white)
+    assert _mime_digest(black) == _mime_digest(image_mime(0x000000))
+
+
+def test_digest_differs_for_different_images_on_real_clipboard(app):
+    clipboard = QGuiApplication.clipboard()
+    digests = []
+    for color in (0x000000, 0xFFFFFF):
+        clipboard.setMimeData(image_mime(color))
+        digests.append(_mime_digest(clipboard.mimeData()))
+    clipboard.clear()
+    assert digests[0] != digests[1]
+
+
+def test_own_mark_with_real_clipboard_image_plus_text(app):
+    clipboard = QGuiApplication.clipboard()
+    service = ClipboardService()  # uses the real application clipboard
+    clipboard.setMimeData(text_mime(SECRET))
+    service.autoRead()
+    clipboard.setMimeData(text_and_image_mime(OTHER))
+    service.markOwnChange()
+    service.autoRead()
+    outcome, text = service.outcome, service.text
+    clipboard.clear()
+    assert (outcome, text) == (Outcome.IGNORED, SECRET)

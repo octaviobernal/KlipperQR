@@ -15,7 +15,8 @@ logging in this module.
 
 Refocus rules (issue #41), implemented only here; the UI just reacts:
 
-* read()       explicit read (Paste button). Always gives a full result:
+* read()       explicit read (Paste button). Also resets the last-read marker
+               unless the result is text. Always gives a full result:
                state/text/message are updated, outcome is EXPLICIT.
 * autoRead()   read on window focus. Compares with the previous text read and
                only touches state/text when the text is NEW. Unchanged text,
@@ -23,7 +24,9 @@ Refocus rules (issue #41), implemented only here; the UI just reacts:
                clipboard changes leave state/text exactly as they were, so a
                binding on them can never wipe the QR or the user's edits.
 * markOwnChange()  call right AFTER the app put something on the clipboard
-               (e.g. Copy image); autoRead() then ignores that content.
+               (e.g. Copy image); autoRead() then ignores that content. This
+               only matters if that content includes text; pure images are
+               already ignored as "not text".
 * clear()      empties state/text but KEEPS the last-read marker, so the same
                clipboard text does not come back on the next focus (Clear, #26).
 * forgetLastRead()  drops the marker, so the same text counts as new again.
@@ -132,8 +135,12 @@ class ClipboardService(QObject):
         """Explicit read (Paste). Always a full result, even if unchanged."""
         Outcome = ClipboardService.Outcome
         state, text, _mime = self._fetch()
-        if state == ClipboardService.State.TEXT:
-            self._last_digest = _digest(text)
+        # What the user sees after this read is the marker. Only text has a
+        # digest; for empty/not-text/failed the old digest no longer matches
+        # what is shown, so the same text must count as new next time.
+        self._last_digest = (
+            _digest(text) if state == ClipboardService.State.TEXT else None
+        )
         self._own_digest = None
         self._set_result(state, text)
         self._set_outcome(Outcome.EXPLICIT)
@@ -254,4 +261,16 @@ def _mime_digest(mime) -> bytes | None:
     for fmt in sorted(mime.formats()):
         h.update(fmt.encode("utf-8"))
         h.update(bytes(mime.data(fmt)))
+    # Image formats such as application/x-qt-image expose 0 bytes through
+    # data(), so also hash the pixels (in memory only, no copy is kept).
+    try:
+        if mime.hasImage():
+            image = mime.imageData()
+            if hasattr(image, "constBits"):
+                h.update(
+                    f"{image.width()}x{image.height()}:{image.format().name}".encode()
+                )
+                h.update(image.constBits().tobytes())
+    except Exception:  # noqa: BLE001 - digest still covers the formats
+        pass
     return h.digest()
