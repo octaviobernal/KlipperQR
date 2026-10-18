@@ -24,6 +24,13 @@ System tools (not on PyPI): `appstreamcli` (package `appstream`),
 `desktop-file-validate` (package `desktop-file-utils`), and for the last
 check `flatpak` + `flatpak-builder` (see [docs/flatpak.md](docs/flatpak.md)).
 
+On a bare Debian/Ubuntu machine the tests also need the system libraries that
+the PySide6 wheels load (`libegl1 libgl1 libopengl0 libxkbcommon0
+libfontconfig1 libdbus-1-3`); without them `import PySide6.QtGui` fails with
+`libEGL.so.1: cannot open shared object file`. CI installs them. CI builds the
+Flatpak inside Flathub's `flatpak-github-actions:kde-6.11` container because
+the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
+
 | Check | Command |
 | --- | --- |
 | REUSE (licenses, SPDX headers) | `reuse lint` |
