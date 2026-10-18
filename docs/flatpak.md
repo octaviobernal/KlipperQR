@@ -31,6 +31,28 @@ flatpak run io.github.octaviobernal.KlipperQR
 If the build fails with a FUSE/rofiles error, add `--disable-rofiles-fuse`.
 `build-dir/` and `.flatpak-builder/` are git-ignored.
 
+## Python libraries (segno)
+
+segno (QR generation) is the only extra library. The `python-segno` module in
+the manifest installs a pinned wheel (URL + sha256) with
+`pip3 install --no-index --no-deps`; Flathub forbids unpinned downloads at
+build time. No Pillow. How to update it: [docs/qr-library.md](qr-library.md).
+
+## Check QR generation offline in the built Flatpak
+
+After `flatpak-builder ... build-dir ...` (no `--install` needed), run the
+headless script inside the sandbox with the network denied. It prints only
+metadata (never clipboard text) and exits 0 on success:
+
+```sh
+flatpak build --unshare=network --filesystem="$PWD/scripts:ro" \
+  --env=QT_QPA_PLATFORM=offscreen build-dir python3 "$PWD/scripts/flatpak-smoke.py"
+```
+
+CI does not run this yet: the Flatpak job only builds. Adding the step needs
+the build directory from the flatpak-builder action (or a `flatpak-builder
+--run` step) and could not be tested locally, so it is proposed, not done.
+
 ## Permissions (finish-args)
 
 | Permission | Why |

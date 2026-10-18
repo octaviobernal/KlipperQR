@@ -45,3 +45,15 @@ def test_manifest_uses_app_id():
     app_id = _app_id()
     text = (ROOT / "flatpak" / (app_id + ".yaml")).read_text()
     assert f"app-id: {app_id}" in text
+
+
+def test_manifest_pins_segno_wheel_and_has_no_network():
+    app_id = _app_id()
+    text = (ROOT / "flatpak" / (app_id + ".yaml")).read_text()
+    pinned = (ROOT / "requirements.txt").read_text()
+    version = re.search(r"^segno==([\d.]+)$", pinned, re.MULTILINE).group(1)
+    assert f"segno-{version}-py3-none-any.whl" in text
+    assert re.search(r"^\s+sha256: [0-9a-f]{64}$", text, re.MULTILINE)
+    assert "--no-deps" in text
+    assert "pillow" not in text.lower()
+    assert "--share=network" not in text

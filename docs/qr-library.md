@@ -88,15 +88,23 @@ with a phone and confirm before this spike is closed.
 
 ## Flatpak packaging
 
-The manifest (`flatpak/io.github.octaviobernal.KlipperQR.yaml`) currently
-gets PySide6 from `io.qt.PySide.BaseApp` and uses no pip downloads. segno is
-a single pure-Python wheel with no dependencies, so adding it is a small
-module in the manifest (a `pip install --no-deps` of a pinned wheel with its
-sha256, as `flatpak-pip-generator segno` would generate) and works offline at
-run time. No extra system libraries, no native code, no Pillow. Not yet
-tested in an actual `flatpak-builder` run: that belongs to the Phase 1
-implementation issue, which must add segno to `requirements.txt` and the
-manifest.
+The manifest (`flatpak/io.github.octaviobernal.KlipperQR.yaml`) gets PySide6
+from `io.qt.PySide.BaseApp` and segno from a `python-segno` module: the pinned
+wheel `segno-1.6.6-py3-none-any.whl` (URL on files.pythonhosted.org plus
+sha256) installed with `pip3 install --no-index --no-deps`. It is one
+pure-Python wheel with no dependencies, so it works offline at run time and
+needs no Pillow. Tested in a real `flatpak-builder` run and inside the built
+sandbox with the network denied (issue #22, see docs/flatpak.md).
+
+### How to update segno
+
+1. Change the version in `requirements.txt` (`segno==X.Y.Z`).
+2. On https://pypi.org/project/segno/ (Download files), copy the URL and the
+   sha256 of `segno-X.Y.Z-py3-none-any.whl` into the `python-segno` module of
+   the manifest. Check the hash yourself: `sha256sum` the downloaded wheel.
+   `tests/test_metadata.py` fails if the manifest and `requirements.txt`
+   disagree on the version.
+3. Rebuild and run the offline check in docs/flatpak.md.
 
 `qrcode` would need Pillow or pypng additionally; I did not check whether
 `io.qt.PySide.BaseApp` already ships Pillow, so that path is unverified.
