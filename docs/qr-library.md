@@ -106,3 +106,16 @@ manifest.
 - No production code, no tests (spike).
 - Decoding libraries (Phase 5): `zxing-cpp` was used only in a throwaway
   environment for this check and is not a project dependency.
+
+## Implementation (issue #21)
+
+`src/klipperqr/qr_service.py` applies the pitfalls above. `generate_qr(text,
+level="M")` never raises and returns a `QrResult` (`state` OK / EMPTY /
+TOO_LONG / FAILED, `png` bytes, `svg` text, `dense`, `message`). `QrService`
+wraps it for QML (`qrService.generate(text)`; properties `state`, `dense`,
+`message`, `png`, `svg`, `pngDataUrl`). The "dense" threshold is the single
+constant `DENSE_THRESHOLD_CHARS` (1000, provisional until a phone scan, #28).
+The capacities above were re-checked by the tests with segno 1.6.6. Tests
+decode the PNG with Qt and compare it with segno's own matrix; if
+`zxing-cpp` and Pillow happen to be installed, one extra test also decodes
+the PNG back to the text (not a project dependency).
