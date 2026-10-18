@@ -34,14 +34,24 @@ QML_MAIN = find_qml_main()
 
 
 def main() -> int:
+    try:
+        from klipperqr.clipboard_service import ClipboardService
+    except ImportError:  # run as `python3 src/klipperqr/main.py`
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from klipperqr.clipboard_service import ClipboardService
+
     app = QGuiApplication(sys.argv)
     app.setApplicationName("KlipperQR")
     app.setDesktopFileName(APP_ID)
 
     engine = QQmlApplicationEngine()
+    clipboard_service = ClipboardService()
+    engine.rootContext().setContextProperty("clipboardService", clipboard_service)
     engine.load(QUrl.fromLocalFile(str(QML_MAIN)))
     if not engine.rootObjects():
         return 1
+    window = engine.rootObjects()[0]
+    clipboard_service.attach_window(window)
     return app.exec()
 
 
