@@ -24,8 +24,18 @@ from PySide6.QtCore import (
     Slot,
 )
 from PySide6.QtGui import QGuiApplication, QWindow
+from PySide6.QtQml import QmlElement, QmlUncreatable
+
+# Registers the type for QML as `import KlipperQR` so QML can write
+# ClipboardService.State.TEXT. The registration happens when this module is
+# imported, so it must be imported before the QML engine loads. The instance
+# itself is still exposed as the context property `clipboardService`.
+QML_IMPORT_NAME = "KlipperQR"
+QML_IMPORT_MAJOR_VERSION = 1
 
 
+@QmlElement
+@QmlUncreatable("Use the clipboardService instance provided by the application.")
 class ClipboardService(QObject):
     """Reads clipboard text on demand and when the attached window is activated."""
 
@@ -106,6 +116,8 @@ class ClipboardService(QObject):
     def attach_window(self, window: QWindow) -> None:
         """Read whenever `window` becomes the active (focused) window."""
         window.activeChanged.connect(lambda: self._on_active_changed(window))
+        if window.isActive():  # already focused: no activeChanged will come
+            self.read()
 
     def _on_active_changed(self, window: QWindow) -> None:
         if window.isActive():

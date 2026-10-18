@@ -179,3 +179,46 @@ def test_module_has_no_dbus_logging_or_disk_use():
     for forbidden in ("QtDBus", "dbus", "QSettings", "logging"):
         assert forbidden not in joined
     assert "print(" not in code
+
+
+class ActiveStubWindow:
+    """Minimal window stand-in that is already active."""
+
+    class _Signal:
+        def connect(self, slot):
+            self.slot = slot
+
+    def __init__(self):
+        self.activeChanged = self._Signal()
+
+    def isActive(self):  # noqa: N802 - Qt naming
+        return True
+
+
+def test_attach_window_already_active_reads_immediately(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.attach_window(ActiveStubWindow())
+    assert service.state == State.TEXT
+
+
+def test_enum_values_resolve_in_qml(app):
+    from PySide6.QtCore import QUrl
+    from PySide6.QtQml import QQmlComponent, QQmlEngine
+
+    engine = QQmlEngine()
+    qml = b"""
+import QtQuick
+import KlipperQR
+QtObject {
+    property int viaState: ClipboardService.State.TEXT
+    property int viaShort: ClipboardService.TEXT
+    property bool defined: ClipboardService.State.FAILED !== undefined
+}
+"""
+    component = QQmlComponent(engine)
+    component.setData(qml, QUrl("inline.qml"))
+    obj = component.create()
+    assert obj is not None, component.errorString()
+    assert obj.property("viaState") == 1
+    assert obj.property("viaShort") == 1
+    assert obj.property("defined") is True
