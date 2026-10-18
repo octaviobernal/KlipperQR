@@ -14,7 +14,7 @@ import sys
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtDBus import QDBusConnection, QDBusInterface
-from PySide6.QtGui import QGuiApplication, QWindow
+from PySide6.QtGui import QColor, QGuiApplication, QRasterWindow
 
 
 def qt_read(app):
@@ -37,12 +37,22 @@ def klipper_read():
     return "ok len=%d" % len(args[0])
 
 
+def _paint(win):
+    from PySide6.QtGui import QPainter
+    p = QPainter(win)
+    p.fillRect(win.geometry().__class__(0, 0, win.width(), win.height()), QColor('lightgray'))
+    p.drawText(20, 55, 'click me')
+    p.end()
+
+
 def main():
     seconds = int(sys.argv[1]) if len(sys.argv) > 1 else 12
     app = QGuiApplication(sys.argv)
-    win = QWindow()
+    # QRasterWindow paints a buffer; a bare QWindow is never mapped on Wayland.
+    win = QRasterWindow()
     win.setTitle("clipboard poc")
     win.resize(300, 100)
+    win.paintEvent = lambda ev: _paint(win)
     win.show()
     win.requestActivate()
     n = [0]

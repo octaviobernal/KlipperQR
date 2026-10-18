@@ -5,7 +5,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 
 # Spike (#3): how KlipperQR reads the clipboard
 
-Status: decision proposed. One check still needs a human (see "Not verified").
+Status: decision proposed. Focused Qt read confirmed on the host; Flatpak run still to confirm (see "Not verified").
 
 ## How it was tested
 
@@ -47,9 +47,10 @@ data); never log or store the text; handle empty / non-text clipboard
 
 ## Not verified
 
-- Qt read while the window is focused, in the Flatpak, on this Plasma session:
-  my automation cannot give a window focus (no click or key injection tool).
-  Please verify (30 seconds):
+- Verified on the host (Plasma Wayland): once the test window is really mapped
+  (`QRasterWindow`; a bare `QWindow` is never shown on Wayland), it gets focus and
+  the Qt read returns `focused=True`, `hasText=True`, with the correct length.
+- Still open: the same focused read inside the Flatpak. Please verify (30 seconds):
   1. `wl-copy "dummy-test-text"`
   2. `python3 docs/spike-clipboard/poc_clipboard.py 20`
   3. Click the small window; the output must change to `focused=True` and `qt(hasText,len)=(True, 15)`.
