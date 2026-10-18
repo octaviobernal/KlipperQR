@@ -119,3 +119,8 @@ The capacities above were re-checked by the tests with segno 1.6.6. Tests
 decode the PNG with Qt and compare it with segno's own matrix; if
 `zxing-cpp` and Pillow happen to be installed, one extra test also decodes
 the PNG back to the text (not a project dependency).
+
+Guidance for future QML consumers (#24, not tested): show the QR in an
+`Image` with `smooth: false`, `fillMode: Image.PreserveAspectFit` and
+`cache: false`, so modules stay sharp when scaled and no copy of the
+sensitive content stays in Qt's image cache.

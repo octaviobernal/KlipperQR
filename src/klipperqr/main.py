@@ -33,7 +33,14 @@ def find_qml_main() -> Path:
 QML_MAIN = find_qml_main()
 
 
-def main() -> int:
+def expose_services(engine):
+    """Create the services and expose them to QML as context properties.
+
+    setContextProperty does NOT take ownership, so each service is parented
+    to the engine (Qt then owns it and the Python wrapper cannot be garbage
+    collected while the engine lives) and also returned so main() can hold a
+    reference for the whole run. Used by main() and by the regression test.
+    """
     try:
         from klipperqr.clipboard_service import ClipboardService
         from klipperqr.qr_service import QrService
@@ -42,14 +49,22 @@ def main() -> int:
         from klipperqr.clipboard_service import ClipboardService
         from klipperqr.qr_service import QrService
 
+    clipboard_service = ClipboardService(parent=engine)
+    qr_service = QrService(engine)
+    context = engine.rootContext()
+    context.setContextProperty("clipboardService", clipboard_service)
+    context.setContextProperty("qrService", qr_service)
+    return clipboard_service, qr_service
+
+
+def main() -> int:
     app = QGuiApplication(sys.argv)
     app.setApplicationName("KlipperQR")
     app.setDesktopFileName(APP_ID)
 
     engine = QQmlApplicationEngine()
-    clipboard_service = ClipboardService()
-    engine.rootContext().setContextProperty("clipboardService", clipboard_service)
-    engine.rootContext().setContextProperty("qrService", QrService())
+    # Local variables keep both services alive until main() returns.
+    clipboard_service, qr_service = expose_services(engine)  # noqa: F841
     engine.load(QUrl.fromLocalFile(str(QML_MAIN)))
     if not engine.rootObjects():
         return 1
