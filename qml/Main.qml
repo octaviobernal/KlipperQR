@@ -108,6 +108,15 @@ Kirigami.ApplicationWindow {
 
     Component.onCompleted: applyText(encodedText)
 
+    // Sets the folder, then the suggested file name, right before each open.
+    // This is done imperatively (not as bindings) because the platform dialog
+    // can reset currentFile when the folder is applied, which left the name
+    // field empty on Plasma.
+    function prepareSaveDialog() {
+        saveDialog.currentFolder = StandardPaths.writableLocation(StandardPaths.PicturesLocation);
+        saveDialog.currentFile = saveDialog.currentFolder + "/" + qsTr("qrcode") + ".png";
+    }
+
     // Save dialog. In the Flatpak Qt uses the file chooser portal, so no
     // --filesystem permission is needed. The suggested name is generic and
     // never contains clipboard text. Cancelling does nothing.
@@ -117,8 +126,6 @@ Kirigami.ApplicationWindow {
 
         title: qsTr("Save QR code")
         fileMode: FileDialog.SaveFile
-        currentFolder: StandardPaths.writableLocation(StandardPaths.PicturesLocation)
-        currentFile: currentFolder + "/" + qsTr("qrcode") + ".png"
         nameFilters: [qsTr("PNG image (*.png)"), qsTr("SVG image (*.svg)")]
         onAccepted: {
             // The chosen filter decides the format when the name has no suffix.
@@ -179,7 +186,10 @@ Kirigami.ApplicationWindow {
                 shortcut: "Ctrl+S"
                 tooltip: qsTr("Save the QR code as a PNG or SVG file (%1)").arg(root.saveShortcutText)
                 enabled: root.showQr
-                onTriggered: saveDialog.open()
+                onTriggered: {
+                    root.prepareSaveDialog();
+                    saveDialog.open();
+                }
             },
             Kirigami.Action {
                 id: copyImageAction

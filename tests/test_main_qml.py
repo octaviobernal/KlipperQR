@@ -383,6 +383,8 @@ def test_save_action_state_and_failure_message(tmp_path):
 
     # Suggested name is generic; opening the dialog does not need the text.
     dialog = window.findChild(QObject, "saveDialog")
+    QMetaObject.invokeMethod(window, "prepareSaveDialog", Qt.DirectConnection)
+    assert dialog.property("currentFolder").toString().startswith("file:///")
     assert dialog.property("currentFile").toString().endswith("/qrcode.png")
     assert "hello" not in dialog.property("currentFile").toString()
 
