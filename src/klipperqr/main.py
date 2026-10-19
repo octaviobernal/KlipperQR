@@ -6,7 +6,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QStandardPaths, QUrl
+from PySide6.QtCore import QLocale, QStandardPaths, QTranslator, QUrl
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
@@ -31,6 +31,42 @@ def find_qml_main() -> Path:
 
 
 QML_MAIN = find_qml_main()
+
+
+def translation_dirs() -> list[Path]:
+    """Folders that may hold the compiled `klipperqr_<lang>.qm` files.
+
+    Installed (e.g. Flatpak): <data dir>/klipperqr/translations, found through
+    QStandardPaths (/app/share/klipperqr/translations in the Flatpak).
+    Source checkout fallback: <repo>/translations.
+    """
+    dirs = [
+        Path(p)
+        for p in QStandardPaths.locateAll(
+            QStandardPaths.StandardLocation.GenericDataLocation,
+            "klipperqr/translations",
+            QStandardPaths.LocateOption.LocateDirectory,
+        )
+    ]
+    dirs.append(Path(__file__).resolve().parents[2] / "translations")
+    return dirs
+
+
+def install_translator(app, locale=None, search_dirs=None):
+    """Install one QTranslator for the system locale; return it or None.
+
+    Call before the QML is loaded. A missing .qm or an unsupported locale is
+    not an error: nothing is installed and the English source text is shown.
+    No message ever includes clipboard content.
+    """
+    locale = QLocale() if locale is None else locale
+    for directory in translation_dirs() if search_dirs is None else search_dirs:
+        translator = QTranslator(app)
+        if translator.load(locale, "klipperqr", "_", str(directory)):
+            app.installTranslator(translator)
+            return translator
+        translator.deleteLater()
+    return None
 
 
 def expose_services(engine):
@@ -61,6 +97,8 @@ def main() -> int:
     app = QGuiApplication(sys.argv)
     app.setApplicationName("KlipperQR")
     app.setDesktopFileName(APP_ID)
+    # Before the QML is loaded, so qsTr() sees the translation.
+    install_translator(app)
 
     engine = QQmlApplicationEngine()
     # Local variables keep both services alive until main() returns.

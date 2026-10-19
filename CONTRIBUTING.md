@@ -120,19 +120,32 @@ What you do today, for every user-visible string:
 - Use plain string literals with `%1` / `%n` placeholders. Extraction does not
   see `self.tr(variable)` or concatenated text.
 
-Status of the rest (do not rely on it yet):
+Commands (run from the repository root):
 
-- Not implemented: the `translations/` folder, loading a translator in
-  `main.py`, installing `.qm` files in the Flatpak and a CI check that the
-  catalogs are current. These are issues #12, #13 and #14.
-- Open decision: whether the catalog format stays `.ts` or becomes gettext
-  `.po` is issue #16. Until it is settled, wrapping strings as above is safe
-  for both.
-- When #12 lands, the intended commands are the ones in
-  [docs/i18n-settings.md](docs/i18n-settings.md) ("How a contributor runs
-  it"): `pyside6-lupdate qml/*.qml src/klipperqr/*.py -ts
-  translations/klipperqr_<lang>.ts`, translate in `pyside6-linguist`, then
-  `pyside6-lrelease`. This will be moved here once it exists.
+```sh
+# 1. After adding or changing strings: update the catalogs. The source
+#    catalog is translations/klipperqr_en.ts. For a new language, use
+#    -ts translations/klipperqr_<lang>.ts (for example klipperqr_es.ts).
+pyside6-lupdate qml/*.qml src/klipperqr/*.py -ts translations/klipperqr_en.ts
+
+# 2. Translate: open the .ts in Qt Linguist (pyside6-linguist).
+
+# 3. Compile to the binary .qm the app loads (git ignores *.qm).
+pyside6-lrelease translations/klipperqr_es.ts -qm translations/klipperqr_es.qm
+```
+
+How it is loaded: `main.py` installs one translator for the system locale
+before the QML loads. It looks for `klipperqr_<lang>.qm` in
+`<data dir>/klipperqr/translations` (`/app/share/klipperqr/translations` in
+the Flatpak) and then in the repo `translations/` folder. With no matching
+`.qm` the English source text is shown and nothing is logged. To try it:
+compile a `.qm` as above and start the app with `LANGUAGE=es LC_ALL=es_ES.UTF-8
+python3 src/klipperqr/main.py` (the locale must exist on your system).
+
+Not done yet (do not rely on it): installing `.qm` files in the Flatpak
+manifest, shipped translations and a CI check that catalogs are current
+(issues #13 and #14). The `.ts` versus gettext `.po` decision is issue #16;
+wrapping strings as above is safe for both. There is no in-app language picker.
 
 ## Manual clipboard tests
 

@@ -13,3 +13,4 @@ repo/
 # Local Claude Code configuration
 .claude/
 CLAUDE.md
+*.qm
