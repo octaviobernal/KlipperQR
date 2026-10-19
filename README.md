@@ -11,6 +11,12 @@ Built with Python, PySide6 and Kirigami, and distributed as a Flatpak.
 
 Status: early development.
 
+The window shows the QR code and, next to it (or below it on narrow windows),
+an editable box with the exact text being encoded. Edit the text and the QR
+code follows. When the window regains focus, your edits are replaced only if
+the clipboard text changed since the last read. The text is kept in memory
+only; nothing is saved or logged.
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout

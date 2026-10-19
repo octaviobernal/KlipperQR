@@ -11,7 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from PySide6.QtCore import QUrl, qInstallMessageHandler  # noqa: E402
+from PySide6.QtCore import QObject, QUrl, qInstallMessageHandler  # noqa: E402
 from PySide6.QtGui import QGuiApplication  # noqa: E402
 from PySide6.QtQml import QQmlApplicationEngine  # noqa: E402
 
@@ -95,4 +95,110 @@ def test_qr_card_follows_text_and_problems():
     settle()
     assert window.property("showQr") is False
     assert qr_service.pngDataUrl == ""
+    window.close()
+
+
+def _setup_with_fake_clipboard():
+    from PySide6.QtCore import QMimeData
+
+    app = QGuiApplication.instance() or QGuiApplication([])
+    engine = QQmlApplicationEngine()
+    clipboard_service, qr_service = expose_services(engine)
+
+    class Fake:
+        mime = QMimeData()
+
+        def mimeData(self):  # noqa: N802 - Qt naming
+            return self.mime
+
+    fake = Fake()
+    clipboard_service._clipboard = fake
+
+    def put(text):
+        mime = QMimeData()
+        if text is not None:
+            mime.setText(text)
+        fake.mime = mime
+
+    engine.load(QUrl.fromLocalFile(str(QML_MAIN)))
+    window = engine.rootObjects()[0]
+    window.show()
+    field = window.findChild(QObject, "encodedTextField")
+    assert field is not None
+    return app, engine, window, field, clipboard_service, qr_service, put
+
+
+def test_text_field_shows_clipboard_and_updates_qr_when_typing():
+    from PySide6.QtTest import QTest
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    assert field.property("text") == ""
+    assert window.property("showQr") is False  # empty state
+
+    put("https://kde.org")
+    cs.read()
+    app.processEvents()
+    assert field.property("text") == "https://kde.org"
+    assert window.property("encodedText") == "https://kde.org"
+    assert window.property("showQr") is True
+    first = qr.pngDataUrl
+
+    # Typing: the QR follows after the short delay, without a button.
+    field.setProperty("text", "typed text")
+    QTest.qWait(600)
+    assert window.property("encodedText") == "typed text"
+    assert qr.pngDataUrl != first
+
+    # A 1000-character text is handled in well under a second.
+    import time
+
+    start = time.monotonic()
+    field.setProperty("text", "a" * 1000)
+    QTest.qWait(600)
+    assert window.property("showQr") is True
+    assert time.monotonic() - start < 2
+
+    # Empty field: back to the empty state.
+    field.setProperty("text", "")
+    QTest.qWait(600)
+    assert window.property("showQr") is False
+    assert window.property("problemTitle") == "No text to encode"
+    window.close()
+
+
+def test_refocus_replaces_edits_only_for_changed_clipboard_text():
+    from PySide6.QtTest import QTest
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    put("original")
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == "original"
+
+    field.setProperty("text", "my edit")
+    QTest.qWait(600)
+
+    # Unchanged, empty and not-text clipboards leave the edit alone.
+    cs.autoRead()
+    put("")
+    cs.autoRead()
+    put(None)
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == "my edit"
+    assert window.property("encodedText") == "my edit"
+
+    # Changed clipboard text replaces it.
+    put("new clipboard text")
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == "new clipboard text"
+    assert window.property("encodedText") == "new clipboard text"
+
+    # An explicit Paste always restores the clipboard text.
+    field.setProperty("text", "edited again")
+    QTest.qWait(600)
+    cs.read()
+    app.processEvents()
+    assert field.property("text") == "new clipboard text"
     window.close()
