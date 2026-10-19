@@ -38,6 +38,7 @@ import base64
 import io
 from dataclasses import dataclass, field
 from enum import IntEnum
+from pathlib import Path
 
 import segno
 from PySide6.QtCore import (
@@ -46,6 +47,7 @@ from PySide6.QtCore import (
     QCoreApplication,
     QEnum,
     QObject,
+    QUrl,
     Signal,
     Slot,
 )
@@ -148,6 +150,35 @@ def _save(symbol, kind: str) -> bytes:
     return buffer.getvalue()
 
 
+SAVE_KINDS = ("png", "svg")
+
+
+def save_qr(result: QrResult, path: Path, kind: str = "png") -> bool:
+    """Write the PNG or SVG of ``result`` to ``path``. Never raises.
+
+    The format follows the file suffix (.png / .svg, any case). Without one,
+    ``kind`` is used and the suffix is appended. Returns True on success. The
+    file holds only the QR image, never the source text.
+    """
+    try:
+        if result.state != QrState.OK:
+            return False
+        path = Path(path)
+        suffix = path.suffix.lower().lstrip(".")
+        if suffix not in SAVE_KINDS:
+            suffix = kind.lower() if isinstance(kind, str) else ""
+            if suffix not in SAVE_KINDS:
+                return False
+            path = path.with_name(path.name + "." + suffix)
+        if suffix == "png":
+            path.write_bytes(result.png)
+        else:
+            path.write_bytes(result.svg.encode("utf-8"))
+        return True
+    except Exception:  # noqa: BLE001 - OSError etc.; details dropped (privacy)
+        return False
+
+
 @QmlElement
 @QmlUncreatable("Use the qrService instance provided by the application.")
 class QrService(QObject):
@@ -181,6 +212,17 @@ class QrService(QObject):
         """Drop the current result (same as generating an empty text)."""
         self._result = QrResult(QrState.EMPTY)
         self.resultChanged.emit()
+
+    @Slot(QUrl, str, result=bool)
+    def saveToFile(self, url: QUrl, kind: str = "png") -> bool:  # noqa: N802
+        """Save the current code as PNG or SVG (issue #28).
+
+        ``url`` comes from the file dialog (a file chooser portal path in the
+        Flatpak). Returns False on any failure so QML can show a message.
+        """
+        if not isinstance(url, QUrl) or not url.isLocalFile():
+            return False
+        return save_qr(self._result, Path(url.toLocalFile()), kind)
 
     @Property(int, notify=resultChanged)
     def state(self) -> int:

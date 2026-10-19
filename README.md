@@ -21,6 +21,11 @@ only; nothing is saved or logged.
 Wayland the image may disappear when KlipperQR closes unless a clipboard
 manager keeps it.
 
+"Save" (Ctrl+S) writes the QR code to a PNG or SVG file (dark modules on white,
+with a quiet zone). The suggested name is `qrcode.png`; it never contains your
+text. In the Flatpak the file dialog is the system file chooser portal, so the
+app needs no filesystem permission.
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout

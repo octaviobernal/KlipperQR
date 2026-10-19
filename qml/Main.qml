@@ -4,6 +4,8 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
+import QtQuick.Dialogs
+import QtCore
 import org.kde.kirigami as Kirigami
 import KlipperQR
 
@@ -57,11 +59,23 @@ Kirigami.ApplicationWindow {
     readonly property int copyMessageMs: 4000
     // null while no message; otherwise true (copied) or false (failed).
     property var copyResult: null
+    readonly property string saveShortcutText: qsTr("Ctrl+S")
+    // null while no message; otherwise true (saved) or false (failed).
+    property var saveResult: null
+
+    // Write the QR code to the chosen file (issue #28). Python does the
+    // writing; a failure only sets saveResult so a friendly message shows.
+    function saveTo(fileUrl, kind) {
+        saveResult = qrService.saveToFile(fileUrl, kind);
+        copyResult = null;
+        copyMessageTimer.restart();
+    }
 
     // Put the QR image on the clipboard (issue #27). The Python service marks
     // the change as its own, so regaining focus does not touch text or QR.
     function copyImage() {
         copyResult = clipboardService.copyImage(qrService.png);
+        saveResult = null;
         copyMessageTimer.restart();
     }
 
@@ -94,11 +108,33 @@ Kirigami.ApplicationWindow {
 
     Component.onCompleted: applyText(encodedText)
 
+    // Save dialog. In the Flatpak Qt uses the file chooser portal, so no
+    // --filesystem permission is needed. The suggested name is generic and
+    // never contains clipboard text. Cancelling does nothing.
+    FileDialog {
+        id: saveDialog
+        objectName: "saveDialog"
+
+        title: qsTr("Save QR code")
+        fileMode: FileDialog.SaveFile
+        currentFolder: StandardPaths.writableLocation(StandardPaths.PicturesLocation)
+        currentFile: currentFolder + "/" + qsTr("qrcode") + ".png"
+        nameFilters: [qsTr("PNG image (*.png)"), qsTr("SVG image (*.svg)")]
+        onAccepted: {
+            // The chosen filter decides the format when the name has no suffix.
+            const svg = selectedNameFilter.extensions.indexOf("svg") >= 0;
+            root.saveTo(selectedFile, svg ? "svg" : "png");
+        }
+    }
+
     Timer {
         id: copyMessageTimer
 
         interval: root.copyMessageMs
-        onTriggered: root.copyResult = null
+        onTriggered: {
+            root.copyResult = null;
+            root.saveResult = null;
+        }
     }
 
     Timer {
@@ -134,6 +170,17 @@ Kirigami.ApplicationWindow {
 
         // Later issues add more Kirigami.Action items here.
         actions: [
+            Kirigami.Action {
+                id: saveAction
+                objectName: "saveAction"
+
+                icon.name: "document-save-as"
+                text: qsTr("Save")
+                shortcut: "Ctrl+S"
+                tooltip: qsTr("Save the QR code as a PNG or SVG file (%1)").arg(root.saveShortcutText)
+                enabled: root.showQr
+                onTriggered: saveDialog.open()
+            },
             Kirigami.Action {
                 id: copyImageAction
                 objectName: "copyImageAction"
@@ -204,6 +251,25 @@ Kirigami.ApplicationWindow {
                 text: root.copyResult === false
                     ? qsTr("Could not copy the image. Please try again.")
                     : qsTr("QR code image copied. You can paste it into another app.")
+
+                Accessible.role: Accessible.AlertMessage
+                Accessible.name: text
+            }
+
+            Kirigami.InlineMessage {
+                id: saveMessage
+                objectName: "saveMessage"
+
+                Layout.fillWidth: true
+                Layout.maximumWidth: mainPage.maximumContentWidth
+                Layout.alignment: Qt.AlignHCenter
+                visible: root.saveResult !== null
+                type: root.saveResult === false
+                    ? Kirigami.MessageType.Error
+                    : Kirigami.MessageType.Positive
+                text: root.saveResult === false
+                    ? qsTr("Could not save the file. Check the location and try again.")
+                    : qsTr("QR code saved.")
 
                 Accessible.role: Accessible.AlertMessage
                 Accessible.name: text

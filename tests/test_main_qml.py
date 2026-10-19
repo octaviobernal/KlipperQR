@@ -363,3 +363,45 @@ def test_copy_image_action_copies_png_and_keeps_text():
     assert "Could not copy" in window.findChild(QObject, "copyMessage").property("text")
     assert isinstance(fake.mime, QMimeData)
     window.close()
+
+
+def test_save_action_state_and_failure_message(tmp_path):
+    from PySide6.QtCore import Q_ARG, QMetaObject, Qt, QUrl
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    action = window.findChild(QObject, "saveAction")
+    assert action is not None
+    assert action.property("text") == "Save"
+    assert action.property("shortcut") == "Ctrl+S"
+    assert "Ctrl+S" in action.property("tooltip")
+    assert action.property("enabled") is False
+
+    put("hello")
+    cs.autoRead()
+    app.processEvents()
+    assert action.property("enabled") is True
+
+    # Suggested name is generic; opening the dialog does not need the text.
+    dialog = window.findChild(QObject, "saveDialog")
+    assert dialog.property("currentFile").toString().endswith("/qrcode.png")
+    assert "hello" not in dialog.property("currentFile").toString()
+
+    ok = tmp_path / "out.png"
+    QMetaObject.invokeMethod(
+        window,
+        "saveTo",
+        Qt.DirectConnection,
+        Q_ARG("QVariant", QUrl.fromLocalFile(str(ok))),
+        Q_ARG("QVariant", "png"),
+    )
+    assert ok.is_file() and window.property("saveResult") is True
+    QMetaObject.invokeMethod(
+        window,
+        "saveTo",
+        Qt.DirectConnection,
+        Q_ARG("QVariant", QUrl.fromLocalFile(str(tmp_path / "no" / "out.png"))),
+        Q_ARG("QVariant", "png"),
+    )
+    assert window.property("saveResult") is False
+    assert "Could not save" in window.findChild(QObject, "saveMessage").property("text")
+    window.close()

@@ -422,3 +422,47 @@ def test_qml_property_access():
     assert obj.property("ok") is True
     assert obj.property("url").startswith("data:image/png;base64,")
     assert app is not None and isinstance(obj, QObject)
+
+
+# --- Saving to a file (issue #28) -------------------------------------------
+
+
+def test_save_png_and_svg_to_temp_dir(tmp_path):
+    from PySide6.QtCore import QUrl
+
+    service = QrService()
+    service.generate(URL)
+    png = tmp_path / "qrcode.png"
+    svg = tmp_path / "qrcode.svg"
+    assert service.saveToFile(QUrl.fromLocalFile(str(png)), "png") is True
+    assert service.saveToFile(QUrl.fromLocalFile(str(svg)), "svg") is True
+    assert png.read_bytes() == service.png.data()
+    assert png.read_bytes().startswith(b"\x89PNG")
+    text = svg.read_text(encoding="utf-8")
+    assert text == service.svg and "<svg" in text
+    assert URL not in text
+
+
+def test_save_without_suffix_uses_chosen_kind(tmp_path):
+    result = generate_qr(URL)
+    assert qr_service.save_qr(result, tmp_path / "plain", "svg") is True
+    assert (tmp_path / "plain.svg").is_file()
+    assert qr_service.save_qr(result, tmp_path / "other.PNG", "svg") is True
+    assert (tmp_path / "other.PNG").read_bytes() == result.png
+
+
+def test_save_failures_return_false_without_raising(tmp_path):
+    from PySide6.QtCore import QUrl
+
+    service = QrService()
+    # No QR yet.
+    assert (
+        service.saveToFile(QUrl.fromLocalFile(str(tmp_path / "a.png")), "png") is False
+    )
+    assert not (tmp_path / "a.png").exists()
+    service.generate(URL)
+    # Missing folder, and a non-local URL.
+    missing = tmp_path / "nope" / "a.png"
+    assert service.saveToFile(QUrl.fromLocalFile(str(missing)), "png") is False
+    assert service.saveToFile(QUrl("https://example.org/a.png"), "png") is False
+    assert qr_service.save_qr(generate_qr(URL), tmp_path / "x", "bmp") is False
