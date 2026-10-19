@@ -109,12 +109,39 @@ Kirigami.ApplicationWindow {
     Component.onCompleted: applyText(encodedText)
 
     // Sets the folder, then the suggested file name, right before each open.
-    // This is done imperatively (not as bindings) because the platform dialog
-    // can reset currentFile when the folder is applied, which left the name
-    // field empty on Plasma.
     function prepareSaveDialog() {
         saveDialog.currentFolder = StandardPaths.writableLocation(StandardPaths.PicturesLocation);
         saveDialog.currentFile = saveDialog.currentFolder + "/" + qsTr("qrcode") + ".png";
+    }
+
+    // Depth-first search for an item by objectName.
+    function findItemByName(item, name) {
+        if (!item)
+            return null;
+        if (item.objectName === name)
+            return item;
+        const kids = item.children;
+        for (let i = 0; i < kids.length; ++i) {
+            const found = findItemByName(kids[i], name);
+            if (found)
+                return found;
+        }
+        return null;
+    }
+
+    // Workaround for Qt's own (non-native) Qt Quick file dialog, used when no
+    // platform file dialog exists (for example pip PySide6 outside KDE). That
+    // dialog only fills its "File name" field from a file that already exists
+    // in the folder, so a new name such as qrcode.png stays empty although
+    // currentFile is set (checked offscreen with Qt 6.10). We fill the field
+    // ourselves. With a native or portal dialog the field does not exist
+    // under the overlay and this does nothing.
+    function fillQtQuickSaveName() {
+        const field = findItemByName(Controls.Overlay.overlay, "fileNameTextField");
+        if (field && field.text.length === 0 && saveDialog.currentFile.toString().length > 0) {
+            const path = saveDialog.currentFile.toString();
+            field.text = decodeURIComponent(path.substring(path.lastIndexOf("/") + 1));
+        }
     }
 
     // Save dialog. In the Flatpak Qt uses the file chooser portal, so no
@@ -126,6 +153,7 @@ Kirigami.ApplicationWindow {
 
         title: qsTr("Save QR code")
         fileMode: FileDialog.SaveFile
+        popupType: Controls.Popup.Item
         nameFilters: [qsTr("PNG image (*.png)"), qsTr("SVG image (*.svg)")]
         onAccepted: {
             // The chosen filter decides the format when the name has no suffix.
@@ -189,6 +217,7 @@ Kirigami.ApplicationWindow {
                 onTriggered: {
                     root.prepareSaveDialog();
                     saveDialog.open();
+                    Qt.callLater(root.fillQtQuickSaveName);
                 }
             },
             Kirigami.Action {

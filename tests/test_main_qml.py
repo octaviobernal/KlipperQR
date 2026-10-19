@@ -407,3 +407,51 @@ def test_save_action_state_and_failure_message(tmp_path):
     assert window.property("saveResult") is False
     assert "Could not save" in window.findChild(QObject, "saveMessage").property("text")
     window.close()
+
+
+def test_save_dialog_shows_suggested_name_and_saves(tmp_path, monkeypatch):
+    """Open the real Qt Quick file dialog offscreen and read its name field."""
+    from PySide6.QtCore import QMetaObject, Qt
+    from PySide6.QtTest import QTest
+
+    # Use a throw-away Pictures folder so nothing is written to the real one.
+    config = tmp_path / "config"
+    pictures = tmp_path / "Pictures"
+    config.mkdir()
+    pictures.mkdir()
+    (config / "user-dirs.dirs").write_text(f'XDG_PICTURES_DIR="{pictures}"\n')
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config))
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    put("secret clipboard text")
+    cs.autoRead()
+    app.processEvents()
+    action = window.findChild(QObject, "saveAction")
+    QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+    QTest.qWait(300)
+
+    name_field = window.findChild(QObject, "fileNameTextField")
+    assert name_field is not None, "Qt Quick file dialog was not created in the window"
+    # Regression for #28: the field used to stay empty.
+    assert name_field.property("text") == "qrcode.png"
+    dialog = window.findChild(QObject, "saveDialog")
+    assert dialog.property("currentFolder").toLocalFile() == str(pictures)
+    assert "secret" not in name_field.property("text")
+
+    # Accepting writes the file with that name in that folder.
+    # The first visible plain Button of the dialog footer is Open/Save (text is
+    # translated, so it is found by type, not by text).
+    buttons = [
+        c
+        for c in window.findChildren(QObject)
+        if c.metaObject().className().startswith("Button_QMLTYPE")
+        and "_QML_" not in c.metaObject().className()
+        and c.property("visible")
+        and c.property("text")
+    ]
+    assert buttons, "no accept button found"
+    QMetaObject.invokeMethod(buttons[0], "click", Qt.DirectConnection)
+    QTest.qWait(300)
+    assert (pictures / "qrcode.png").is_file()
+    assert window.property("saveResult") is True
+    window.close()
