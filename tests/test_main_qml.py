@@ -266,3 +266,54 @@ def test_paste_action_always_shows_result_and_hint():
     app.processEvents()
     assert window.property("showQr") is True
     window.close()
+
+
+def test_clear_action_empties_text_and_qr_without_resurrecting_it():
+    from PySide6.QtCore import QMetaObject, Qt
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    action = window.findChild(QObject, "clearAction")
+    assert action is not None
+    assert action.property("text") == "Clear"
+    assert "Ctrl+Shift+Delete" in action.property("tooltip")
+    assert action.property("shortcut") == "Ctrl+Shift+Delete"
+    # Nothing to clear yet: disabled.
+    assert action.property("enabled") is False
+
+    put("secret token")
+    cs.autoRead()
+    app.processEvents()
+    assert window.property("showQr") is True
+    assert action.property("enabled") is True
+
+    QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+    app.processEvents()
+    assert field.property("text") == ""
+    assert window.property("encodedText") == ""
+    assert window.property("showQr") is False
+    assert window.property("problemTitle") == "No text to encode"
+    assert action.property("enabled") is False
+    # Services keep no text in memory.
+    assert cs.text == ""
+    assert qr.pngDataUrl == ""
+    assert qr.svg == ""
+
+    # Regaining focus with the same clipboard text does not bring it back.
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == ""
+    assert window.property("showQr") is False
+
+    # Changed clipboard text is shown.
+    put("another")
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == "another"
+
+    # Clear, then Paste restores the old clipboard text.
+    QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+    app.processEvents()
+    cs.read()
+    app.processEvents()
+    assert field.property("text") == "another"
+    window.close()

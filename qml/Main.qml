@@ -51,6 +51,7 @@ Kirigami.ApplicationWindow {
     }
     readonly property string clipboardHint: qsTr("Copy some text in another app, then come back here or press Paste. KlipperQR can only read the clipboard while this window is active.")
     readonly property string pasteShortcutText: qsTr("Ctrl+Shift+V")
+    readonly property string clearShortcutText: qsTr("Ctrl+Shift+Delete")
 
     // Short, plain description of the encoded text for screen readers.
     function describeText(text) {
@@ -66,6 +67,17 @@ Kirigami.ApplicationWindow {
         typingTimer.stop();
         encodedText = text;
         qrService.generate(text);
+    }
+
+    // Remove the text and the QR code (issue #26). The system clipboard is
+    // NOT touched. clipboardService.clear() keeps its last-read marker, so
+    // the same clipboard text does not come back when the window regains
+    // focus; only Paste brings it back.
+    function clearAll() {
+        textField.text = "";
+        applyText("");
+        qrService.clear();
+        clipboardService.clear();
     }
 
     Component.onCompleted: applyText(encodedText)
@@ -103,6 +115,18 @@ Kirigami.ApplicationWindow {
 
         // Later issues add more Kirigami.Action items here.
         actions: [
+            Kirigami.Action {
+                id: clearAction
+                objectName: "clearAction"
+
+                icon.name: "edit-clear-all"
+                text: qsTr("Clear")
+                shortcut: "Ctrl+Shift+Delete"
+                tooltip: qsTr("Remove the text and the QR code (%1)").arg(root.clearShortcutText)
+                // Also enabled while a typed change is still waiting for the delay.
+                enabled: root.hasText || textField.text.length > 0
+                onTriggered: root.clearAll()
+            },
             Kirigami.Action {
                 id: pasteAction
                 objectName: "pasteAction"
