@@ -455,3 +455,53 @@ def test_save_dialog_shows_suggested_name_and_saves(tmp_path, monkeypatch):
     assert (pictures / "qrcode.png").is_file()
     assert window.property("saveResult") is True
     window.close()
+
+
+def test_dense_warning_appears_and_disappears_with_text_length():
+    from PySide6.QtCore import QMetaObject, Qt
+    from PySide6.QtTest import QTest
+
+    from klipperqr.qr_service import DENSE_THRESHOLD_CHARS
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    message = window.findChild(QObject, "denseMessage")
+    assert message is not None
+    assert message.property("visible") is False  # empty
+
+    def type_text(text):
+        field.setProperty("text", text)
+        QTest.qWait(600)
+
+    type_text("short text")
+    assert message.property("visible") is False
+
+    # Exactly at the threshold: not dense.
+    type_text("a" * DENSE_THRESHOLD_CHARS)
+    assert window.property("showQr") is True
+    assert message.property("visible") is False
+
+    # One more character: warning appears, QR still shown.
+    type_text("a" * (DENSE_THRESHOLD_CHARS + 1))
+    assert window.property("showQr") is True
+    assert message.property("visible") is True
+    assert "shortening" in message.property("text")
+    assert message.property("type") == 2  # Kirigami.MessageType.Warning
+
+    # Shorter again: warning goes away.
+    type_text("a" * 50)
+    assert message.property("visible") is False
+
+    # Too long for any QR: the "too long" problem is shown, not the warning.
+    type_text("a" * 5000)
+    assert window.property("showQr") is False
+    assert message.property("visible") is False
+
+    # Clearing hides it as well.
+    type_text("a" * (DENSE_THRESHOLD_CHARS + 1))
+    assert message.property("visible") is True
+    QMetaObject.invokeMethod(
+        window.findChild(QObject, "clearAction"), "trigger", Qt.DirectConnection
+    )
+    app.processEvents()
+    assert message.property("visible") is False
+    window.close()

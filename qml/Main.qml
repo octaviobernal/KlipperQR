@@ -314,6 +314,24 @@ Kirigami.ApplicationWindow {
                 Accessible.name: text
             }
 
+            // Dense code warning (issue #29). The QR code is still shown. The
+            // threshold lives in Python (DENSE_THRESHOLD_CHARS) and arrives
+            // through qrService.dense.
+            Kirigami.InlineMessage {
+                id: denseMessage
+                objectName: "denseMessage"
+
+                Layout.fillWidth: true
+                Layout.maximumWidth: mainPage.maximumContentWidth
+                Layout.alignment: Qt.AlignHCenter
+                visible: root.showQr && qrService.dense
+                type: Kirigami.MessageType.Warning
+                text: qsTr("This text is very long, so the QR code is very dense and may be hard to scan with a phone. Try shortening the text.")
+
+                Accessible.role: Accessible.AlertMessage
+                Accessible.name: text
+            }
+
             GridLayout {
                 Layout.alignment: Qt.AlignHCenter
                 columns: mainPage.wide ? 2 : 1
