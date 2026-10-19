@@ -34,6 +34,13 @@ Kirigami.ApplicationWindow {
     // Delay after the last keystroke before the QR code is rebuilt.
     readonly property int typingDelayMs: 250
     readonly property bool showQr: hasText && qrService.state === QrService.State.OK
+    // When a QR code appears or the dense warning shows up, make sure the
+    // top of the page (the QR code) is in view and not scrolled away.
+    onShowQrChanged: Qt.callLater(root.scrollToTop)
+    function scrollToTop() {
+        if (mainPage.flickable)
+            mainPage.flickable.contentY = -mainPage.flickable.topMargin;
+    }
     // Why there is no QR code: empty text or a generator problem.
     readonly property string problemTitle: {
         if (!hasText)
@@ -200,6 +207,7 @@ Kirigami.ApplicationWindow {
 
     Kirigami.ScrollablePage {
         id: mainPage
+        objectName: "mainPage"
 
         title: qsTr("KlipperQR")
 
@@ -325,6 +333,7 @@ Kirigami.ApplicationWindow {
                 Layout.maximumWidth: mainPage.maximumContentWidth
                 Layout.alignment: Qt.AlignHCenter
                 visible: root.showQr && qrService.dense
+                onVisibleChanged: Qt.callLater(root.scrollToTop)
                 type: Kirigami.MessageType.Warning
                 text: qsTr("This text is very long, so the QR code is very dense and may be hard to scan with a phone. Try shortening the text.")
 
@@ -340,17 +349,27 @@ Kirigami.ApplicationWindow {
 
                 Kirigami.AbstractCard {
                     id: qrCard
+                    objectName: "qrCard"
 
                     // Square: as wide as allowed, but not taller than the
-                    // visible page.
+                    // visible page minus the messages shown above it (a
+                    // message such as the dense warning must not push the QR
+                    // code below the fold; issue #29).
+                    readonly property real messagesHeight:
+                        (copyMessage.visible ? copyMessage.height + content.spacing : 0)
+                        + (saveMessage.visible ? saveMessage.height + content.spacing : 0)
+                        + (denseMessage.visible ? denseMessage.height + content.spacing : 0)
                     readonly property real side: Math.min(
                         mainPage.cardWidth,
                         Math.max(Kirigami.Units.gridUnit * 10,
-                                 mainPage.height - 2 * Kirigami.Units.largeSpacing))
+                                 mainPage.height - mainPage.topPadding - mainPage.bottomPadding
+                                 - messagesHeight))
 
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     Layout.preferredWidth: side
+                    Layout.maximumWidth: side
                     Layout.preferredHeight: side
+                    Layout.maximumHeight: side
                     visible: root.showQr
 
                     contentItem: Image {
@@ -373,6 +392,7 @@ Kirigami.ApplicationWindow {
 
                 Kirigami.AbstractCard {
                     id: textCard
+                    objectName: "textCard"
 
                     Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
                     Layout.preferredWidth: root.showQr ? qrCard.side : mainPage.cardWidth

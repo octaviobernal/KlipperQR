@@ -505,3 +505,71 @@ def test_dense_warning_appears_and_disappears_with_text_length():
     app.processEvents()
     assert message.property("visible") is False
     window.close()
+
+
+def test_dense_qr_card_is_visible_inside_the_page_at_default_size():
+    """Regression (#29): with 1500 characters the QR card must really be on screen.
+
+    The dense warning sits above the QR card; it must not push the card below
+    the fold or leave the page scrolled away from it.
+    """
+    from PySide6.QtCore import QPointF
+    from PySide6.QtQuick import QQuickItem
+    from PySide6.QtTest import QTest
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    QTest.qWait(300)
+
+    def item(name):
+        found = [i for i in window.findChildren(QQuickItem) if i.objectName() == name]
+        assert found, name
+        return found[0]
+
+    def page_flickable():
+        return [
+            i
+            for i in window.findChildren(QQuickItem)
+            if i.metaObject().className().startswith("QQuickFlickable")
+            and i.property("contentHeight") > 0
+            and i.width() > 0.9 * window.width() - 40
+        ][0]
+
+    # Default size: 30 x 28 grid units (checked, not assumed).
+    assert window.width() > 0 and window.height() > 0
+    field.forceActiveFocus()
+    text = (("The quick brown fox jumps over the lazy dog. ") * 40)[:1500]
+    # Start with a normal (not dense) text, then scroll the page to the bottom
+    # (as when the cursor of a long text is made visible) and paste 1500 characters.
+    field.setProperty("text", text[:500])
+    QTest.qWait(800)
+    flick = page_flickable()
+    flick.setProperty(
+        "contentY", max(0, flick.property("contentHeight") - flick.height())
+    )
+    field.setProperty("text", text)
+    QTest.qWait(800)
+
+    assert window.property("showQr") is True
+    assert item("denseMessage").property("visible") is True
+    card = item("qrCard")
+    image = _find_image(window)
+    assert card.isVisible() and image is not None and image.isVisible()
+    assert card.width() > 0 and card.height() > 0
+    assert abs(card.width() - card.height()) < 1  # square
+    # Loaded (Image.status is not readable from Python; use progress/painted size).
+    assert image.property("progress") == 1.0
+    assert image.property("paintedWidth") > 0 and image.property("paintedHeight") > 0
+    assert len(image.property("source").toString()) > 1000
+
+    page = item("mainPage")
+    page_top = page.mapToScene(QPointF(0, 0)).y()
+    page_bottom = page_top + page.height()
+    card_top = card.mapToScene(QPointF(0, 0)).y()
+    card_bottom = card_top + card.height()
+    # The whole QR card is inside the visible page area.
+    assert card_top >= page_top - 1, (card_top, page_top)
+    assert card_bottom <= page_bottom + 1, (card_bottom, page_bottom)
+    # The warning is shown above the QR card, also visible.
+    warn_top = item("denseMessage").mapToScene(QPointF(0, 0)).y()
+    assert page_top - 1 <= warn_top < card_top
+    window.close()
