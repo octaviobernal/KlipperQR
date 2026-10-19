@@ -26,20 +26,33 @@ def test_main_qml_loads_without_errors():
         engine = QQmlApplicationEngine()
         services = expose_services(engine)  # noqa: F841
         engine.load(QUrl.fromLocalFile(str(QML_MAIN)))
-        app.processEvents()
         roots = engine.rootObjects()
         assert roots, "Main.qml failed to load:\n" + "\n".join(messages)
         window = roots[0]
+        window.show()
+        app.processEvents()
         assert window.property("title") == "KlipperQR"
         assert window.property("hasText") is False
         assert window.property("minimumWidth") > 0
         # Exposed clipboard state follows the Python service.
         clipboard_service = services[0]
         assert window.property("clipboardState") == clipboard_service.state
+        # Let the toolbar (Paste action) finish creating its items before closing.
+        from PySide6.QtTest import QTest
+
+        QTest.qWait(300)
         window.close()
     finally:
         qInstallMessageHandler(previous)
-    errors = [m for m in messages if "Main.qml" in m or "qml" in m.lower()]
+    # Known environment noise: with the pip PySide6 + system Kirigami used in
+    # development, ANY Kirigami page that has an action logs these two lines
+    # (reproduced with a 6-line Kirigami.Page, not specific to this app).
+    benign = ("ActionToolBar.qml: Object or context destroyed", "Could not create delegate for ToolBarLayout")
+    errors = [
+        m
+        for m in messages
+        if ("Main.qml" in m or "qml" in m.lower()) and not any(b in m for b in benign)
+    ]
     assert not errors, "\n".join(errors)
 
 
@@ -201,4 +214,52 @@ def test_refocus_replaces_edits_only_for_changed_clipboard_text():
     cs.read()
     app.processEvents()
     assert field.property("text") == "new clipboard text"
+    window.close()
+
+
+def test_paste_action_always_shows_result_and_hint():
+    from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    action = window.findChild(QObject, "pasteAction")
+    assert action is not None
+    assert "Ctrl+Shift+V" in action.property("tooltip")
+    assert action.property("shortcut") == "Ctrl+Shift+V"
+
+    def paste():
+        QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+        app.processEvents()
+
+    # Empty state shows the limits hint.
+    assert "only read the clipboard while this window is active" in window.property(
+        "problemExplanation"
+    )
+
+    put("hello")
+    paste()
+    assert field.property("text") == "hello"
+    assert window.property("showQr") is True
+
+    # Unchanged text but edited field: Paste still restores it.
+    field.setProperty("text", "edited")
+    app.processEvents()
+    paste()
+    assert field.property("text") == "hello"
+
+    # Empty clipboard: friendly message, no stale QR.
+    put(None)
+    paste()
+    assert window.property("showQr") is False
+    explanation = window.property("problemExplanation")
+    assert "clipboard is empty" in explanation
+    assert "press Paste" in explanation
+
+    # Automatic read of the same state does not wipe an existing QR.
+    put("again")
+    paste()
+    assert window.property("showQr") is True
+    put(None)
+    cs.autoRead()
+    app.processEvents()
+    assert window.property("showQr") is True
     window.close()

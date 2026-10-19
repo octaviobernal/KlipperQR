@@ -43,10 +43,14 @@ Kirigami.ApplicationWindow {
     readonly property string problemExplanation: {
         if (hasText)
             return qrService.message;
+        // Friendly clipboard message (empty / not text), if any, then the
+        // always-shown hint about the clipboard limits.
         return clipboardService.message.length > 0
-            ? clipboardService.message
-            : qsTr("Type some text, or copy some text and come back to this window.");
+            ? clipboardService.message + "\n\n" + clipboardHint
+            : clipboardHint;
     }
+    readonly property string clipboardHint: qsTr("Copy some text in another app, then come back here or press Paste. KlipperQR can only read the clipboard while this window is active.")
+    readonly property string pasteShortcutText: qsTr("Ctrl+Shift+V")
 
     // Short, plain description of the encoded text for screen readers.
     function describeText(text) {
@@ -97,9 +101,23 @@ Kirigami.ApplicationWindow {
 
         title: qsTr("KlipperQR")
 
-        // Later issues add Kirigami.Action items here (shown in the page
-        // toolbar) without restructuring the page.
-        actions: []
+        // Later issues add more Kirigami.Action items here.
+        actions: [
+            Kirigami.Action {
+                id: pasteAction
+                objectName: "pasteAction"
+
+                icon.name: "edit-paste"
+                text: qsTr("Paste")
+                // Ctrl+Shift+V: plain Ctrl+V already pastes inside the text field.
+                shortcut: "Ctrl+Shift+V"
+                tooltip: qsTr("Paste text from the clipboard (%1)").arg(root.pasteShortcutText)
+                // Explicit read: always shows the result (see ClipboardService.read).
+                // Accessible name: a toolbar button is named after `text`
+                // ("Paste"); the tooltip carries the shortcut.
+                onTriggered: clipboardService.read()
+            }
+        ]
 
         // Widest a card should get on a wide window.
         readonly property real maximumContentWidth: Kirigami.Units.gridUnit * 30
