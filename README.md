@@ -17,6 +17,10 @@ code follows. When the window regains focus, your edits are replaced only if
 the clipboard text changed since the last read. The text is kept in memory
 only; nothing is saved or logged.
 
+"Copy image" (Ctrl+Shift+C) puts the QR code on the clipboard as an image. On
+Wayland the image may disappear when KlipperQR closes unless a clipboard
+manager keeps it.
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout

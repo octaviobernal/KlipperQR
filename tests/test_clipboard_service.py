@@ -547,3 +547,60 @@ def test_own_mark_with_real_clipboard_image_plus_text(app):
     outcome, text = service.outcome, service.text
     clipboard.clear()
     assert (outcome, text) == (Outcome.IGNORED, SECRET)
+
+
+class WritableFakeClipboard(FakeClipboard):
+    """FakeClipboard that also accepts setMimeData()."""
+
+    def __init__(self, mime=None, fail=False):
+        super().__init__(mime)
+        self.fail = fail
+
+    def setMimeData(self, mime):  # noqa: N802 - Qt naming
+        if self.fail:
+            raise RuntimeError("clipboard not writable")
+        self.mime = mime
+
+
+def _png_bytes():
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+
+    image = QImage(4, 4, QImage.Format.Format_RGB32)
+    image.fill(0xFFFFFF)
+    data = QByteArray()
+    buf = QBuffer(data)
+    buf.open(QIODevice.OpenModeFlag.WriteOnly)
+    image.save(buf, "PNG")
+    return data
+
+
+def test_copy_image_sets_image_mime_data(app):
+    fake = WritableFakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    assert service.copyImage(_png_bytes()) is True
+    assert fake.mime.hasImage()
+    assert not fake.mime.hasText()
+    assert fake.mime.imageData().width() == 4
+
+
+def test_copy_image_failure_returns_false(app):
+    assert (
+        ClipboardService(WritableFakeClipboard(fail=True)).copyImage(_png_bytes())
+        is False
+    )
+    from PySide6.QtCore import QByteArray
+
+    fake = WritableFakeClipboard()
+    assert ClipboardService(fake).copyImage(QByteArray(b"not a png")) is False
+    assert fake.mime is None
+
+
+def test_refocus_after_copy_image_keeps_text_and_state(app):
+    fake = WritableFakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    assert service.copyImage(_png_bytes())
+    service.autoRead()
+    assert service.outcome == Outcome.IGNORED
+    assert service.state == State.TEXT
+    assert service.text == SECRET

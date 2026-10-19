@@ -317,3 +317,49 @@ def test_clear_action_empties_text_and_qr_without_resurrecting_it():
     app.processEvents()
     assert field.property("text") == "another"
     window.close()
+
+
+def test_copy_image_action_copies_png_and_keeps_text():
+    from PySide6.QtCore import QMetaObject, QMimeData, Qt
+
+    app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
+    fake = cs._clipboard
+    fake.setMimeData = lambda mime: setattr(fake, "mime", mime)
+    action = window.findChild(QObject, "copyImageAction")
+    assert action is not None
+    assert action.property("text") == "Copy image"
+    assert "Ctrl+Shift+C" in action.property("tooltip")
+    assert action.property("shortcut") == "Ctrl+Shift+C"
+    # No QR yet: disabled, no message.
+    assert action.property("enabled") is False
+    assert window.findChild(QObject, "copyMessage").property("visible") is False
+
+    put("hello")
+    cs.autoRead()
+    app.processEvents()
+    assert action.property("enabled") is True
+
+    QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+    app.processEvents()
+    assert fake.mime.hasImage()
+    assert fake.mime.imageData().width() > 0
+    assert window.findChild(QObject, "copyMessage").property("visible") is True
+    assert window.property("copyResult") is True
+
+    # Regaining focus: text and QR stay, no not-text message.
+    cs.autoRead()
+    app.processEvents()
+    assert field.property("text") == "hello"
+    assert window.property("showQr") is True
+
+    # A failing clipboard shows a friendly error.
+    def broken(mime):
+        raise RuntimeError("no")
+
+    fake.setMimeData = broken
+    QMetaObject.invokeMethod(action, "trigger", Qt.DirectConnection)
+    app.processEvents()
+    assert window.property("copyResult") is False
+    assert "Could not copy" in window.findChild(QObject, "copyMessage").property("text")
+    assert isinstance(fake.mime, QMimeData)
+    window.close()

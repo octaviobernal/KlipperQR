@@ -40,12 +40,14 @@ from enum import IntEnum
 
 from PySide6.QtCore import (
     Property,
+    QByteArray,
     QEnum,
+    QMimeData,
     QObject,
     Signal,
     Slot,
 )
-from PySide6.QtGui import QGuiApplication, QWindow
+from PySide6.QtGui import QGuiApplication, QImage, QWindow
 from PySide6.QtQml import QmlElement, QmlUncreatable
 
 # Registers the type for QML as `import KlipperQR` so QML can write
@@ -181,6 +183,30 @@ class ClipboardService(QObject):
             self._own_digest = _mime_digest(clipboard.mimeData())
         except Exception:  # noqa: BLE001 - deliberately drop the details
             self._own_digest = None
+
+    @Slot(QByteArray, result=bool)
+    def copyImage(self, png) -> bool:  # noqa: N802 - QML-visible name
+        """Put a PNG image on the clipboard (Copy image, #27).
+
+        Returns True on success and False if the data is not a valid image or
+        the clipboard cannot be written. Never raises and never logs. On
+        success the change is marked as the app's own (markOwnChange), so
+        regaining focus does not react to it. Needs no Flatpak permission.
+        """
+        try:
+            image = QImage.fromData(QByteArray(png), "PNG")
+            if image.isNull():
+                return False
+            clipboard = self._clipboard
+            if clipboard is None:
+                clipboard = QGuiApplication.clipboard()
+            mime = QMimeData()
+            mime.setImageData(image)
+            clipboard.setMimeData(mime)  # the clipboard takes ownership
+        except Exception:  # noqa: BLE001 - deliberately drop the details
+            return False
+        self.markOwnChange()
+        return True
 
     @Slot()
     def clear(self) -> None:

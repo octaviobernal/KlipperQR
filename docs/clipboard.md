@@ -91,7 +91,8 @@ In-app hint (short, wrap in `qsTr()`):
 | --- | --- | --- |
 | `read()` | Paste button | Always a full result (text, empty, not text, failed); `outcome` = `EXPLICIT`. |
 | `autoRead()` | window focus | Replaces `state`/`text` only if the text differs from the previous text read (`outcome` = `NEW_TEXT`). Same text = `UNCHANGED`; empty, not text, failed or the app's own change = `IGNORED`; in both cases `state`/`text` stay as they were. |
-| `markOwnChange()` | Copy image (#27) | Call right after putting data on the clipboard; `autoRead()` ignores that exact content. Other content is handled normally. |
+| `copyImage(png)` | Copy image (#27) | Puts the PNG on the clipboard as image data (no text format), returns True/False, then calls `markOwnChange()` itself. |
+| `markOwnChange()` | `copyImage()` | Call right after putting data on the clipboard; `autoRead()` ignores that exact content. Other content is handled normally. |
 | `clear()` | Clear (#26) | Empties `state`/`text` but keeps the last-read marker, so the same text does not return on focus. |
 | `forgetLastRead()` | (rarely) | Drops the marker: the same text counts as new next time. Do not use it for Clear. |
 
@@ -121,3 +122,13 @@ Behaviour on a real Wayland session and in the Flatpak: expected, not tested.
 3. Add the limits text to the README.
 4. Manual test checklist for focus behaviour on Wayland and X11 (Flatpak).
 5. Optional, later, only if users ask: Klipper integration behind an opt-in, documenting the `--talk-name=org.kde.klipper` permission and Flathub review risk.
+
+## Copy image (issue #27)
+
+`ClipboardService.copyImage(png)` writes the QR PNG with `QClipboard`. It needs
+no Flatpak permission. After it, the clipboard holds an image, so regaining
+focus is ignored (no replaced text, no not-text message). Limit on Wayland:
+the image is served by the running app, so it may disappear when KlipperQR
+closes unless a clipboard manager (for example Klipper) keeps it. Pasting into
+Kolourpaint on Plasma Wayland, on the host and in the Flatpak: not yet tested
+by a person.

@@ -52,6 +52,18 @@ Kirigami.ApplicationWindow {
     readonly property string clipboardHint: qsTr("Copy some text in another app, then come back here or press Paste. KlipperQR can only read the clipboard while this window is active.")
     readonly property string pasteShortcutText: qsTr("Ctrl+Shift+V")
     readonly property string clearShortcutText: qsTr("Ctrl+Shift+Delete")
+    readonly property string copyShortcutText: qsTr("Ctrl+Shift+C")
+    // How long the "image copied" message stays visible.
+    readonly property int copyMessageMs: 4000
+    // null while no message; otherwise true (copied) or false (failed).
+    property var copyResult: null
+
+    // Put the QR image on the clipboard (issue #27). The Python service marks
+    // the change as its own, so regaining focus does not touch text or QR.
+    function copyImage() {
+        copyResult = clipboardService.copyImage(qrService.png);
+        copyMessageTimer.restart();
+    }
 
     // Short, plain description of the encoded text for screen readers.
     function describeText(text) {
@@ -81,6 +93,13 @@ Kirigami.ApplicationWindow {
     }
 
     Component.onCompleted: applyText(encodedText)
+
+    Timer {
+        id: copyMessageTimer
+
+        interval: root.copyMessageMs
+        onTriggered: root.copyResult = null
+    }
 
     Timer {
         id: typingTimer
@@ -115,6 +134,17 @@ Kirigami.ApplicationWindow {
 
         // Later issues add more Kirigami.Action items here.
         actions: [
+            Kirigami.Action {
+                id: copyImageAction
+                objectName: "copyImageAction"
+
+                icon.name: "edit-copy"
+                text: qsTr("Copy image")
+                shortcut: "Ctrl+Shift+C"
+                tooltip: qsTr("Copy the QR code as an image (%1)").arg(root.copyShortcutText)
+                enabled: root.showQr
+                onTriggered: root.copyImage()
+            },
             Kirigami.Action {
                 id: clearAction
                 objectName: "clearAction"
@@ -159,6 +189,25 @@ Kirigami.ApplicationWindow {
             id: content
 
             spacing: Kirigami.Units.largeSpacing
+
+            Kirigami.InlineMessage {
+                id: copyMessage
+                objectName: "copyMessage"
+
+                Layout.fillWidth: true
+                Layout.maximumWidth: mainPage.maximumContentWidth
+                Layout.alignment: Qt.AlignHCenter
+                visible: root.copyResult !== null
+                type: root.copyResult === false
+                    ? Kirigami.MessageType.Error
+                    : Kirigami.MessageType.Positive
+                text: root.copyResult === false
+                    ? qsTr("Could not copy the image. Please try again.")
+                    : qsTr("QR code image copied. You can paste it into another app.")
+
+                Accessible.role: Accessible.AlertMessage
+                Accessible.name: text
+            }
 
             GridLayout {
                 Layout.alignment: Qt.AlignHCenter
