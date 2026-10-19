@@ -47,7 +47,10 @@ def test_main_qml_loads_without_errors():
     # Known environment noise: with the pip PySide6 + system Kirigami used in
     # development, ANY Kirigami page that has an action logs these two lines
     # (reproduced with a 6-line Kirigami.Page, not specific to this app).
-    benign = ("ActionToolBar.qml: Object or context destroyed", "Could not create delegate for ToolBarLayout")
+    benign = (
+        "ActionToolBar.qml: Object or context destroyed",
+        "Could not create delegate for ToolBarLayout",
+    )
     errors = [
         m
         for m in messages
@@ -218,7 +221,7 @@ def test_refocus_replaces_edits_only_for_changed_clipboard_text():
 
 
 def test_paste_action_always_shows_result_and_hint():
-    from PySide6.QtCore import Q_ARG, QMetaObject, Qt
+    from PySide6.QtCore import QMetaObject, Qt
 
     app, engine, window, field, cs, qr, put = _setup_with_fake_clipboard()
     action = window.findChild(QObject, "pasteAction")
