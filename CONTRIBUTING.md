@@ -52,8 +52,12 @@ check `flatpak` + `flatpak-builder` (see [docs/flatpak.md](docs/flatpak.md)).
 On a bare Debian/Ubuntu machine the tests also need the system libraries that
 the PySide6 wheels load (`libegl1 libgl1 libopengl0 libxkbcommon0
 libfontconfig1 libdbus-1-3`); without them `import PySide6.QtGui` fails with
-`libEGL.so.1: cannot open shared object file`. CI installs them. CI builds the
-Flatpak inside Flathub's `flatpak-github-actions:kde-6.11` container because
+`libEGL.so.1: cannot open shared object file`. The tests that load `Main.qml`
+also need the Kirigami QML module (`qml6-module-org-kde-kirigami`, plus the
+`qml6-module-qtquick-*` packages), which Ubuntu 24.04 does not package for
+Qt 6. CI therefore runs the checks job in an `ubuntu:26.04` container with
+PySide6 and Kirigami from apt (same Qt version); see the apt list in
+`.github/workflows/ci.yml`. CI builds the Flatpak inside Flathub's `flatpak-github-actions:kde-6.11` container because
 the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
 
 | Check | Command |
