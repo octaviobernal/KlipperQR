@@ -62,6 +62,7 @@ the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
 | Python lint | `ruff check .` |
 | Python format | `ruff format --check .` (fix with `ruff format .`) |
 | Tests | `pytest` (collects only `tests/`) |
+| Translations current | `python3 scripts/check-translations.py` (fix with `--update`) |
 | Desktop file | `desktop-file-validate data/io.github.octaviobernal.KlipperQR.desktop` |
 | AppStream | `appstreamcli validate --no-net data/io.github.octaviobernal.KlipperQR.metainfo.xml` |
 | Flatpak build | `flatpak-builder --user --force-clean --disable-rofiles-fuse --install-deps-from=flathub build-dir flatpak/io.github.octaviobernal.KlipperQR.yaml` |
@@ -128,6 +129,9 @@ Commands (run from the repository root):
 #    -ts translations/klipperqr_<lang>.ts (for example klipperqr_es.ts).
 pyside6-lupdate qml/*.qml src/klipperqr/*.py -ts translations/klipperqr_en.ts
 
+#    Shortcut for all catalogs at once (also what CI tells you to run):
+python3 scripts/check-translations.py --update
+
 # 2. Translate: open the .ts in Qt Linguist (pyside6-linguist).
 
 # 3. Compile to the binary .qm the app loads (git ignores *.qm).
@@ -149,8 +153,12 @@ languages today: Spanish (`klipperqr_es.ts`, complete). `klipperqr_en.ts` is
 the source catalog. How to check it in the built Flatpak:
 [docs/flatpak.md](docs/flatpak.md).
 
-Not done yet (do not rely on it): a CI check that catalogs are current
-(issue #14). The `.ts` versus gettext `.po` decision is issue #16; wrapping
+CI runs `python3 scripts/check-translations.py`, which re-runs `pyside6-lupdate`
+in a temporary copy and fails if a committed `.ts` differs (ignoring
+`<location>` line numbers). Fix a failure with `--update`, translate the new
+entries, and commit. It only updates existing catalogs (a new language still
+needs the `-ts` command above once) and does not compile `.qm`. Not done yet:
+the `.ts` versus gettext `.po` decision is issue #16; wrapping
 strings as above is safe for both. There is no in-app language picker.
 
 ## Manual clipboard tests

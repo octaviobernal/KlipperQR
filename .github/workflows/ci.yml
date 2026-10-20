@@ -54,6 +54,9 @@ jobs:
           QT_QPA_PLATFORM: offscreen
         run: pytest
 
+      - name: Translation catalogs are up to date
+        run: python3 scripts/check-translations.py
+
       - name: Desktop file validation
         run: desktop-file-validate data/io.github.octaviobernal.KlipperQR.desktop
 
