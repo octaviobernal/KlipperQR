@@ -57,7 +57,9 @@ also need the Kirigami QML module (`qml6-module-org-kde-kirigami`, plus the
 `qml6-module-qtquick-*` packages), which Ubuntu 24.04 does not package for
 Qt 6. CI therefore runs the checks job in an `ubuntu:26.04` container with
 PySide6 and Kirigami from apt (same Qt version); see the apt list in
-`.github/workflows/ci.yml`. CI builds the Flatpak inside Flathub's `flatpak-github-actions:kde-6.11` container because
+`.github/workflows/ci.yml` (it includes `python3-pyside6.qttest`, which
+the QML tests import). CI builds the Flatpak inside Flathub's
+`flatpak-github-actions:kde-6.11` container because
 the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
 
 | Check | Command |
