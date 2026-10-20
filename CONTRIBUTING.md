@@ -72,6 +72,7 @@ the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
 | Desktop file | `desktop-file-validate data/io.github.octaviobernal.KlipperQR.desktop` |
 | AppStream | `appstreamcli validate --no-net data/io.github.octaviobernal.KlipperQR.metainfo.xml` |
 | Flatpak build | `flatpak-builder --user --force-clean --disable-rofiles-fuse --install-deps-from=flathub build-dir flatpak/io.github.octaviobernal.KlipperQR.yaml` |
+| Flatpak smoke | `flatpak build --unshare=network --filesystem="$PWD/scripts:ro" --env=QT_QPA_PLATFORM=offscreen build-dir python3 "$PWD/scripts/flatpak-smoke.py"` (run after the build; prints metadata only, exit 0 = OK) |
 
 Keep this table in sync with `.github/workflows/ci.yml`: when you add or
 change a CI step, change the row here in the same commit.

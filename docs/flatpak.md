@@ -49,9 +49,11 @@ flatpak build --unshare=network --filesystem="$PWD/scripts:ro" \
   --env=QT_QPA_PLATFORM=offscreen build-dir python3 "$PWD/scripts/flatpak-smoke.py"
 ```
 
-CI does not run this yet: the Flatpak job only builds. Adding the step needs
-the build directory from the flatpak-builder action (or a `flatpak-builder
---run` step) and could not be tested locally, so it is proposed, not done.
+CI runs this same command after the Flatpak build (the `flatpak` job in
+`.github/workflows/ci.yml`), so a missing runtime dependency such as segno
+turns the job red. The script treats only "network unreachable" style errors
+(ENETUNREACH, EACCES, EPERM, `socket.gaierror`) as "network denied"; any other
+error, including a timeout, makes it exit non-zero.
 
 ## Translations
 

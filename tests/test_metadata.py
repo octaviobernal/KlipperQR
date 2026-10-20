@@ -57,3 +57,28 @@ def test_manifest_pins_segno_wheel_and_has_no_network():
     assert "--no-deps" in text
     assert "pillow" not in text.lower()
     assert "--share=network" not in text
+
+
+def test_manifest_installs_python_deps_offline_and_has_exact_permissions():
+    app_id = _app_id()
+    text = (ROOT / "flatpak" / (app_id + ".yaml")).read_text()
+    pip_lines = [line for line in text.splitlines() if "pip3 install" in line]
+    assert pip_lines
+    for line in pip_lines:
+        assert "--no-index" in line
+        assert "--no-build-isolation" in line
+    block = re.search(r"^finish-args:\n((?:  - .+\n)+)", text, re.MULTILINE)
+    assert block
+    args = [line.strip()[2:] for line in block.group(1).splitlines()]
+    assert args == [
+        "--socket=wayland",
+        "--socket=fallback-x11",
+        "--share=ipc",
+        "--device=dri",
+    ]
+
+
+def test_manifest_does_not_install_segno_script():
+    app_id = _app_id()
+    text = (ROOT / "flatpak" / (app_id + ".yaml")).read_text()
+    assert "rm -f ${FLATPAK_DEST}/bin/segno" in text
