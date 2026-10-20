@@ -20,10 +20,53 @@
     </message>
 </context>
 <context>
+    <name>KlipperAboutPage</name>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="13"/>
+        <source>KlipperQR</source>
+        <translation>KlipperQR</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="17"/>
+        <source>Turn copied text or links into a QR code</source>
+        <translation>Convierte texto o enlaces copiados en un código QR</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="21"/>
+        <source>KlipperQR works entirely on your device. Nothing you copy or type is sent anywhere.</source>
+        <translation>KlipperQR funciona por completo en tu dispositivo. Nada de lo que copias o escribes se envía a ningún sitio.</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="22"/>
+        <source>© 2026 Octavio Bernal</source>
+        <translation>© 2026 Octavio Bernal</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="26"/>
+        <source>Author</source>
+        <translation>Autor</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="36"/>
+        <source>segno (QR code library, BSD-3-Clause license)</source>
+        <translation>segno (biblioteca de códigos QR, licencia BSD-3-Clause)</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="45"/>
+        <source>GNU General Public License, version 3 or later</source>
+        <translation>Licencia Pública General de GNU, versión 3 o posterior</translation>
+    </message>
+    <message>
+        <location filename="../qml/KlipperAboutPage.qml" line="47"/>
+        <source>KlipperQR is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version. See https://www.gnu.org/licenses/gpl-3.0.html for the full text.</source>
+        <translation>KlipperQR es software libre: puedes redistribuirlo y/o modificarlo bajo los términos de la Licencia Pública General de GNU publicada por la Free Software Foundation, ya sea la versión 3 de la Licencia o (a tu elección) cualquier versión posterior. Consulta https://www.gnu.org/licenses/gpl-3.0.html para ver el texto completo.</translation>
+    </message>
+</context>
+<context>
     <name>Main</name>
     <message>
         <location filename="../qml/Main.qml" line="15"/>
-        <location filename="../qml/Main.qml" line="212"/>
+        <location filename="../qml/Main.qml" line="223"/>
         <source>KlipperQR</source>
         <translation>KlipperQR</translation>
     </message>
@@ -93,88 +136,93 @@
         <translation>Imagen SVG (*.svg)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="221"/>
+        <location filename="../qml/Main.qml" line="232"/>
         <source>Save</source>
         <translation>Guardar</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="223"/>
+        <location filename="../qml/Main.qml" line="234"/>
         <source>Save the QR code as a PNG or SVG file (%1)</source>
         <translation>Guardar el código QR como archivo PNG o SVG (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="236"/>
+        <location filename="../qml/Main.qml" line="247"/>
         <source>Copy image</source>
         <translation>Copiar imagen</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="238"/>
+        <location filename="../qml/Main.qml" line="249"/>
         <source>Copy the QR code as an image (%1)</source>
         <translation>Copiar el código QR como imagen (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="247"/>
+        <location filename="../qml/Main.qml" line="258"/>
         <source>Clear</source>
         <translation>Borrar</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="249"/>
+        <location filename="../qml/Main.qml" line="260"/>
         <source>Remove the text and the QR code (%1)</source>
         <translation>Quitar el texto y el código QR (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="259"/>
+        <location filename="../qml/Main.qml" line="270"/>
         <source>Paste</source>
         <translation>Pegar</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="262"/>
+        <location filename="../qml/Main.qml" line="273"/>
         <source>Paste text from the clipboard (%1)</source>
         <translation>Pegar texto desde el portapapeles (%1)</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="299"/>
+        <location filename="../qml/Main.qml" line="284"/>
+        <source>About KlipperQR</source>
+        <translation>Acerca de KlipperQR</translation>
+    </message>
+    <message>
+        <location filename="../qml/Main.qml" line="320"/>
         <source>Could not copy the image. Please try again.</source>
         <translation>No se pudo copiar la imagen. Inténtalo de nuevo.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="300"/>
+        <location filename="../qml/Main.qml" line="321"/>
         <source>QR code image copied. You can paste it into another app.</source>
         <translation>Imagen del código QR copiada. Puedes pegarla en otra aplicación.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="318"/>
+        <location filename="../qml/Main.qml" line="339"/>
         <source>Could not save the file. Check the location and try again.</source>
         <translation>No se pudo guardar el archivo. Revisa la ubicación e inténtalo de nuevo.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="319"/>
+        <location filename="../qml/Main.qml" line="340"/>
         <source>QR code saved.</source>
         <translation>Código QR guardado.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="338"/>
+        <location filename="../qml/Main.qml" line="359"/>
         <source>This text is very long, so the QR code is very dense and may be hard to scan with a phone. Try shortening the text.</source>
         <translation>Este texto es muy largo, por lo que el código QR es muy denso y puede ser difícil de escanear con un teléfono. Prueba a acortar el texto.</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="388"/>
+        <location filename="../qml/Main.qml" line="409"/>
         <source>QR code</source>
         <translation>Código QR</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="406"/>
         <location filename="../qml/Main.qml" line="427"/>
+        <location filename="../qml/Main.qml" line="448"/>
         <source>Text in the QR code</source>
         <translation>Texto del código QR</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="422"/>
+        <location filename="../qml/Main.qml" line="443"/>
         <source>Type or paste the text to put in the QR code</source>
         <translation>Escribe o pega el texto que irá en el código QR</translation>
     </message>
     <message>
-        <location filename="../qml/Main.qml" line="428"/>
+        <location filename="../qml/Main.qml" line="449"/>
         <source>The QR code is built from this text. You can edit it.</source>
         <translation>El código QR se crea a partir de este texto. Puedes editarlo.</translation>
     </message>

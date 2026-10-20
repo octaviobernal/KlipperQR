@@ -78,10 +78,12 @@ def expose_services(engine):
     reference for the whole run. Used by main() and by the regression test.
     """
     try:
+        from klipperqr.app_info import AppInfo
         from klipperqr.clipboard_service import ClipboardService
         from klipperqr.qr_service import QrService
     except ImportError:  # run as `python3 src/klipperqr/main.py`
         sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+        from klipperqr.app_info import AppInfo
         from klipperqr.clipboard_service import ClipboardService
         from klipperqr.qr_service import QrService
 
@@ -90,6 +92,8 @@ def expose_services(engine):
     context = engine.rootContext()
     context.setContextProperty("clipboardService", clipboard_service)
     context.setContextProperty("qrService", qr_service)
+    # Parented to the engine, so Qt keeps it alive; not part of the return value.
+    context.setContextProperty("appInfo", AppInfo(APP_ID, engine))
     return clipboard_service, qr_service
 
 

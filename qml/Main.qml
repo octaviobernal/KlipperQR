@@ -205,6 +205,15 @@ Kirigami.ApplicationWindow {
 
     pageStack.initialPage: mainPage
 
+    // Number of pages on the stack (1 = main page only).
+    readonly property int pageDepth: pageStack.depth
+
+    // Open the About page on top of the main page (once).
+    function openAbout() {
+        if (pageStack.depth < 2)
+            pageStack.push(Qt.resolvedUrl("KlipperAboutPage.qml"));
+    }
+
     Kirigami.ScrollablePage {
         id: mainPage
         objectName: "mainPage"
@@ -264,6 +273,16 @@ Kirigami.ApplicationWindow {
                 // Accessible name: a toolbar button is named after `text`
                 // ("Paste"); the tooltip carries the shortcut.
                 onTriggered: clipboardService.read()
+            },
+            Kirigami.Action {
+                id: aboutAction
+                objectName: "aboutAction"
+
+                icon.name: "help-about"
+                text: qsTr("About KlipperQR")
+                // Lives in the overflow ("hamburger") menu, not on the toolbar.
+                displayHint: Kirigami.DisplayHint.AlwaysHide
+                onTriggered: root.openAbout()
             }
         ]
 

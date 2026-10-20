@@ -18,6 +18,9 @@ SPDX-License-Identifier: CC0-1.0
   <launchable type="desktop-id">io.github.octaviobernal.KlipperQR.desktop</launchable>
   <url type="homepage">https://github.com/octaviobernal/KlipperQR</url>
   <url type="bugtracker">https://github.com/octaviobernal/KlipperQR/issues</url>
+  <releases>
+    <release version="0.1.0" date="2026-10-19"/>
+  </releases>
   <categories>
     <category>Utility</category>
   </categories>
