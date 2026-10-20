@@ -53,6 +53,26 @@ CI does not run this yet: the Flatpak job only builds. Adding the step needs
 the build directory from the flatpak-builder action (or a `flatpak-builder
 --run` step) and could not be tested locally, so it is proposed, not done.
 
+## Translations
+
+The manifest runs `flatpak/install-translations.sh`, which compiles each
+`translations/klipperqr_*.ts` to `.qm` with `lrelease` (Qt 6, part of
+`org.kde.Sdk`) and installs them in `/app/share/klipperqr/translations`, the
+folder `main.py` searches. It exits with an error (so the build fails) if no
+catalog or no non-empty `.qm` is produced. No extra permission is needed.
+
+Check Spanish in the built Flatpak (headless). Set both `LC_ALL` and `LANG`:
+the sandbox sets `LC_ALL=en_US.utf8`, which would otherwise win.
+
+```sh
+flatpak build --filesystem="$PWD/scripts:ro" --env=QT_QPA_PLATFORM=offscreen \
+  --env=LC_ALL=es_ES.UTF-8 --env=LANG=es_ES.UTF-8 \
+  build-dir python3 "$PWD/scripts/flatpak-i18n-smoke.py"
+```
+
+To look at the real window in Spanish after `--install`:
+`flatpak run --env=LC_ALL=es_ES.UTF-8 --env=LANG=es_ES.UTF-8 io.github.octaviobernal.KlipperQR`.
+
 ## Permissions (finish-args)
 
 | Permission | Why |

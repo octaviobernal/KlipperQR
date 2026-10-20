@@ -37,6 +37,8 @@ modules:
       - install -d /app/share/klipperqr/qml
       - install -m644 qml/*.qml /app/share/klipperqr/qml/
       - install -Dm755 flatpak/klipperqr.sh /app/bin/klipperqr
+      # Compile the .ts catalogs to .qm (lrelease is in org.kde.Sdk); fails if none.
+      - sh flatpak/install-translations.sh /app/share/klipperqr/translations
       - install -Dm644 data/io.github.octaviobernal.KlipperQR.desktop -t /app/share/applications
       - install -Dm644 data/io.github.octaviobernal.KlipperQR.metainfo.xml -t /app/share/metainfo
       - install -Dm644 data/io.github.octaviobernal.KlipperQR.svg -t /app/share/icons/hicolor/scalable/apps

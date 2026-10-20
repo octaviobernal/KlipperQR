@@ -142,10 +142,16 @@ the Flatpak) and then in the repo `translations/` folder. With no matching
 compile a `.qm` as above and start the app with `LANGUAGE=es LC_ALL=es_ES.UTF-8
 python3 src/klipperqr/main.py` (the locale must exist on your system).
 
-Not done yet (do not rely on it): installing `.qm` files in the Flatpak
-manifest, shipped translations and a CI check that catalogs are current
-(issues #13 and #14). The `.ts` versus gettext `.po` decision is issue #16;
-wrapping strings as above is safe for both. There is no in-app language picker.
+In the Flatpak the manifest compiles every `translations/klipperqr_*.ts` with
+`lrelease` (from `org.kde.Sdk`) through `flatpak/install-translations.sh` and
+installs the `.qm` files; the build fails if no `.qm` is produced. Shipped
+languages today: Spanish (`klipperqr_es.ts`, complete). `klipperqr_en.ts` is
+the source catalog. How to check it in the built Flatpak:
+[docs/flatpak.md](docs/flatpak.md).
+
+Not done yet (do not rely on it): a CI check that catalogs are current
+(issue #14). The `.ts` versus gettext `.po` decision is issue #16; wrapping
+strings as above is safe for both. There is no in-app language picker.
 
 ## Manual clipboard tests
 

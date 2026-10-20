@@ -89,3 +89,60 @@ def test_default_search_dirs_end_with_checkout_translations():
 
     assert translation_dirs()[-1] == ROOT / "translations"
     assert (ROOT / "translations" / "klipperqr_en.ts").is_file()
+
+
+def test_shipped_spanish_catalog_is_complete_and_changes_labels(tmp_path):
+    ts = ROOT / "translations" / "klipperqr_es.ts"
+    assert "unfinished" not in ts.read_text(encoding="utf-8")
+    subprocess.run(
+        [LRELEASE, str(ts), "-qm", str(tmp_path / "klipperqr_es.qm")],
+        check=True,
+        capture_output=True,
+    )
+    app = QGuiApplication.instance() or QGuiApplication([])
+    texts = label_texts(app, QLocale("es_ES"), [tmp_path])
+    assert {"Guardar", "Copiar imagen", "Borrar", "Pegar"} <= texts
+    assert "Paste" not in texts
+
+
+def _run_install_script(tmp_path, with_ts):
+    """Run flatpak/install-translations.sh in a scratch tree with an `lrelease`
+    shim that forwards to pyside6-lrelease (the SDK ships the real `lrelease`)."""
+    work = tmp_path / "work"
+    (work / "translations").mkdir(parents=True)
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    shim = bin_dir / "lrelease"
+    shim.write_text(f'#!/bin/sh\nexec "{LRELEASE}" "$@"\n')
+    shim.chmod(0o755)
+    if with_ts:
+        shutil.copy(ROOT / "tests" / "data" / "klipperqr_es.ts", work / "translations")
+    dest = tmp_path / "dest"
+    result = subprocess.run(
+        ["sh", str(ROOT / "flatpak" / "install-translations.sh"), str(dest)],
+        cwd=work,
+        env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}"},
+        capture_output=True,
+        text=True,
+    )
+    return result, dest
+
+
+def test_install_script_installs_compiled_catalogs(tmp_path):
+    result, dest = _run_install_script(tmp_path, with_ts=True)
+    assert result.returncode == 0, result.stderr
+    assert (dest / "klipperqr_es.qm").stat().st_size > 0
+
+
+def test_install_script_fails_without_catalogs(tmp_path):
+    result, dest = _run_install_script(tmp_path, with_ts=False)
+    assert result.returncode != 0
+    assert "no translations" in result.stderr
+    assert not dest.exists()
+
+
+def test_manifest_runs_the_install_script():
+    manifest = (ROOT / "flatpak" / "io.github.octaviobernal.KlipperQR.yaml").read_text()
+    assert (
+        "flatpak/install-translations.sh /app/share/klipperqr/translations" in manifest
+    )
