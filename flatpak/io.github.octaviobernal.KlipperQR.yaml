@@ -23,7 +23,7 @@ modules:
   - name: python-segno
     buildsystem: simple
     build-commands:
-      - pip3 install --verbose --exists-action=i --no-index --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation segno-1.6.6-py3-none-any.whl
+      - "true"
       # Unneeded command-line script of segno; the app only imports the library.
       - rm -f ${FLATPAK_DEST}/bin/segno
     sources:
