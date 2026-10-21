@@ -97,7 +97,7 @@ verified" means nobody has run these steps in that environment.
 
 | Environment | Steps 1 to 6 | Date / version / tester |
 | --- | --- | --- |
-| Plasma Wayland, host | Not yet run against this checklist (see note) | |
+| Plasma Wayland, host | Pass (all steps) | 2026-10-20, commit c94e308, Octavio Bernal |
 | Plasma Wayland, Flatpak | Not yet run against this checklist (see note) | |
 | Plasma X11, host | Not yet verified | |
 | Plasma X11, Flatpak | Not yet verified | |
@@ -108,5 +108,6 @@ Note: the spike (#3) confirmed on Plasma Wayland, host and Flatpak, that a
 focused Qt read works and an unfocused read returns no text (see the
 verification log in [clipboard.md](clipboard.md)). It used a throwaway script,
 not the app UI, so it does not count as a run of this checklist. The first
-full run of this checklist needs a person at a Plasma Wayland session; record
-it in the table above.
+full run of this checklist was done on Plasma Wayland, host (see the table).
+The Flatpak run still needs a person at a Plasma Wayland session; record it in
+the table above.
