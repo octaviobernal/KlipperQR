@@ -171,6 +171,6 @@ strings as above is safe for both. There is no in-app language picker.
 
 ## Manual clipboard tests
 
-Clipboard behavior depends on Wayland, X11 and Flatpak. The manual test
-checklist is planned in issue #17 and will be linked here. Background:
-[docs/clipboard.md](docs/clipboard.md).
+Clipboard behavior depends on Wayland, X11 and Flatpak. Before each release,
+follow the [manual clipboard test checklist](docs/clipboard-test-checklist.md)
+and record the result there. Background: [docs/clipboard.md](docs/clipboard.md).
