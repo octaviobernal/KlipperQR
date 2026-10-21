@@ -84,7 +84,8 @@ To look at the real window in Spanish after `--install`:
 | `--share=ipc` | Shared memory with the X server; needed for X11 rendering. |
 | `--device=dri` | GPU access for Qt Quick (OpenGL/Vulkan) rendering. |
 
-Not granted: network, filesystem access, D-Bus names. Clipboard/Klipper
+Not granted: network, filesystem access, D-Bus names (a test fails if any
+is added; see [privacy.md](privacy.md)). Clipboard/Klipper
 permissions are decided in issue #3.
 
 ## App ID and metadata files

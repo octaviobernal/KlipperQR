@@ -26,6 +26,17 @@ with a quiet zone). The suggested name is `qrcode.png`; it never contains your
 text. In the Flatpak the file dialog is the system file chooser portal, so the
 app needs no filesystem permission.
 
+## Privacy
+
+- Nothing leaves your device: the app makes no network requests.
+- Nothing is logged: the app never prints your text.
+- Nothing is stored: the text stays in memory only, with no settings, cache or
+  temporary files.
+- There is no history: only the current text is shown.
+
+The only file written is a PNG or SVG that you choose to save. Details and how
+this is verified: [docs/privacy.md](docs/privacy.md).
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout
