@@ -13,12 +13,41 @@ SPDX-License-Identifier: CC0-1.0
     <name>Octavio Bernal</name>
   </developer>
   <description>
-    <p>KlipperQR turns the text or link you just copied into a QR code that you can scan with your phone.</p>
+    <p>KlipperQR turns the text or link you just copied into a QR code that you can scan with your phone. Paste or type your text, and the QR code appears at once.</p>
+    <p>You can save the QR code as a PNG or SVG image, or copy the image to paste it into another app.</p>
+    <p>Privacy: everything happens on your device. KlipperQR never uses the network, and it never logs, stores or sends the text you encode.</p>
+    <p>Note: on Wayland, apps may only read the clipboard while their window is active, so KlipperQR reads it when you focus the window or press Paste.</p>
   </description>
+  <keywords>
+    <keyword>QR</keyword>
+    <keyword>QR code</keyword>
+    <keyword>clipboard</keyword>
+    <keyword>barcode</keyword>
+    <keyword>link</keyword>
+  </keywords>
+  <branding>
+    <color type="primary" scheme_preference="light">#3daee9</color>
+    <color type="primary" scheme_preference="dark">#1d6f9f</color>
+  </branding>
   <launchable type="desktop-id">io.github.octaviobernal.KlipperQR.desktop</launchable>
   <url type="homepage">https://github.com/octaviobernal/KlipperQR</url>
   <url type="bugtracker">https://github.com/octaviobernal/KlipperQR/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/main/docs/screenshots/main-wide.png</image>
+      <caption>A QR code next to the text it encodes, in a wide window</caption>
+    </screenshot>
+    <screenshot>
+      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/main/docs/screenshots/empty-narrow.png</image>
+      <caption>The empty state in a narrow window, as on a phone</caption>
+    </screenshot>
+  </screenshots>
   <releases>
+    <release version="1.0.0" date="2026-10-20">
+      <description>
+        <p>First stable release: create a QR code from your clipboard or typed text, save it as PNG or SVG, or copy the image.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-10-19"/>
   </releases>
   <categories>
@@ -29,5 +58,12 @@ SPDX-License-Identifier: CC0-1.0
     <control>pointing</control>
     <control>touch</control>
   </supports>
+  <!-- OARS: the app has no violence, drugs, sex, language, gambling, social
+       features, purchases or network access, so every attribute is "none"
+       (an empty content_rating means exactly that). Confirmed for issue #33. -->
   <content_rating type="oars-1.1"/>
+  <!-- Translation: metainfo text is plain English for now. Flathub/AppStream
+       support translated <name>/<summary>/<p> via xml:lang elements; add them
+       alongside the Qt .ts catalogs when a language is released (see
+       docs/i18n-settings.md). -->
 </component>

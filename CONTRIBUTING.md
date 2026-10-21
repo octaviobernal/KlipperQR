@@ -71,6 +71,7 @@ the `appstream` shipped with Ubuntu 24.04 fails `appstreamcli compose`.
 | Translations current | `python3 scripts/check-translations.py` (fix with `--update`) |
 | Desktop file | `desktop-file-validate data/io.github.octaviobernal.KlipperQR.desktop` |
 | AppStream | `appstreamcli validate --no-net data/io.github.octaviobernal.KlipperQR.metainfo.xml` |
+| AppStream URLs (needs network; run after the screenshots are pushed, not in CI) | `appstreamcli validate data/io.github.octaviobernal.KlipperQR.metainfo.xml` |
 | Flatpak build | `flatpak-builder --user --force-clean --disable-rofiles-fuse --install-deps-from=flathub build-dir flatpak/io.github.octaviobernal.KlipperQR.yaml` |
 | Flatpak smoke | `flatpak build --unshare=network --filesystem="$PWD/scripts:ro" --env=QT_QPA_PLATFORM=offscreen build-dir python3 "$PWD/scripts/flatpak-smoke.py"` (run after the build; prints metadata only, exit 0 = OK) |
 

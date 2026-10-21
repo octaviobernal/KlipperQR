@@ -82,3 +82,20 @@ def test_manifest_does_not_install_segno_script():
     app_id = _app_id()
     text = (ROOT / "flatpak" / (app_id + ".yaml")).read_text()
     assert "rm -f ${FLATPAK_DEST}/bin/segno" in text
+
+
+def test_metainfo_is_complete_for_flathub():
+    root = ET.parse(ROOT / "data" / (_app_id() + ".metainfo.xml")).getroot()
+    assert len(root.findall("description/p")) >= 3
+    assert root.findall("keywords/keyword")
+    release = root.find("releases/release")
+    assert release.get("version") and release.get("date")
+    shots = root.findall("screenshots/screenshot")
+    assert len(shots) >= 2
+    assert len(root.findall("screenshots/screenshot[@type='default']")) == 1
+    for shot in shots:
+        url = shot.findtext("image")
+        assert url.startswith("https://")
+        assert shot.findtext("caption")
+        # The URL ends in a file that is committed in the repository.
+        assert (ROOT / "docs" / "screenshots" / url.rsplit("/", 1)[1]).is_file()

@@ -5,4 +5,4 @@
 
 # Single source of truth for the version. tests/test_about.py checks that it
 # matches the newest <release> in data/*.metainfo.xml.
-__version__ = "0.1.0"
+__version__ = "1.0.0"

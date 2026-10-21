@@ -35,3 +35,9 @@ path = "tests/data/*.ts"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Octavio Bernal <octavio.bernal.q@gmail.com>"
 SPDX-License-Identifier = "GPL-3.0-or-later"
+
+[[annotations]]
+path = "docs/screenshots/*.png"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 Octavio Bernal <octavio.bernal.q@gmail.com>"
+SPDX-License-Identifier = "CC0-1.0"
