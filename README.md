@@ -37,6 +37,18 @@ app needs no filesystem permission.
 The only file written is a PNG or SVG that you choose to save. Details and how
 this is verified: [docs/privacy.md](docs/privacy.md).
 
+## Clipboard limits
+
+On Wayland, apps may only read the clipboard while their window is in focus.
+KlipperQR therefore reads the clipboard when you open or focus the window, or
+when you press **Paste** (Ctrl+Shift+V). It cannot watch the clipboard in the
+background, so the QR code does not update while you copy things in another
+app: come back to the window or press Paste. KlipperQR never stores or sends
+clipboard text.
+
+Why: this rule protects your passwords, and it means KlipperQR needs no extra
+Flatpak permission. Details: [docs/clipboard.md](docs/clipboard.md).
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout
