@@ -194,9 +194,14 @@ Kirigami.ApplicationWindow {
         target: clipboardService
 
         function onReadFinished(outcome) {
-            if (outcome === ClipboardService.Outcome.EXPLICIT
-                    || outcome === ClipboardService.Outcome.NEW_TEXT
-                    || outcome === ClipboardService.Outcome.NONE) {
+            // An explicit read that found no text (empty, not text, failed)
+            // keeps the current text and QR code; only the message shows.
+            const explicitNoText = outcome === ClipboardService.Outcome.EXPLICIT
+                && clipboardService.state !== ClipboardService.State.TEXT;
+            if (!explicitNoText
+                    && (outcome === ClipboardService.Outcome.EXPLICIT
+                        || outcome === ClipboardService.Outcome.NEW_TEXT
+                        || outcome === ClipboardService.Outcome.NONE)) {
                 textField.text = clipboardService.text;
                 root.applyText(clipboardService.text);
             }
@@ -317,6 +322,23 @@ Kirigami.ApplicationWindow {
                 text: root.copyResult === false
                     ? qsTr("Could not copy the image. Please try again.")
                     : qsTr("QR code image copied. You can paste it into another app.")
+
+                Accessible.role: Accessible.AlertMessage
+                Accessible.name: text
+            }
+
+            // Friendly message after a Paste that found no text while a QR
+            // code is still shown. Without text it appears in the placeholder.
+            Kirigami.InlineMessage {
+                id: clipboardMessage
+                objectName: "clipboardMessage"
+
+                Layout.fillWidth: true
+                Layout.maximumWidth: mainPage.maximumContentWidth
+                Layout.alignment: Qt.AlignHCenter
+                visible: root.hasText && clipboardService.message.length > 0
+                type: Kirigami.MessageType.Information
+                text: clipboardService.message
 
                 Accessible.role: Accessible.AlertMessage
                 Accessible.name: text

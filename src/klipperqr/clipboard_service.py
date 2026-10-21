@@ -15,9 +15,10 @@ logging in this module.
 
 Refocus rules (issue #41), implemented only here; the UI just reacts:
 
-* read()       explicit read (Paste button). Also resets the last-read marker
-               unless the result is text. Always gives a full result:
-               state/text/message are updated, outcome is EXPLICIT.
+* read()       explicit read (Paste button). Text replaces the shown text.
+               An empty, non-text or failed clipboard only updates
+               state/message: the text already shown (and the last-read
+               marker) are KEPT. The outcome is always EXPLICIT.
 * autoRead()   read on window focus. Compares with the previous text read and
                only touches state/text when the text is NEW. Unchanged text,
                an empty or non-text clipboard, a failed read and the app's own
@@ -136,15 +137,17 @@ class ClipboardService(QObject):
     def read(self) -> None:
         """Explicit read (Paste). Always a full result, even if unchanged."""
         Outcome = ClipboardService.Outcome
+        State = ClipboardService.State
         state, text, _mime = self._fetch()
-        # What the user sees after this read is the marker. Only text has a
-        # digest; for empty/not-text/failed the old digest no longer matches
-        # what is shown, so the same text must count as new next time.
-        self._last_digest = (
-            _digest(text) if state == ClipboardService.State.TEXT else None
-        )
         self._own_digest = None
-        self._set_result(state, text)
+        if state == State.TEXT:
+            self._last_digest = _digest(text)
+            self._set_result(state, text)
+        else:
+            # Empty, not text or failed: only report the state (friendly
+            # message). The text already shown, and so the last-read marker
+            # that describes it, stay as they were.
+            self._set_result(state, self._text)
         self._set_outcome(Outcome.EXPLICIT)
 
     @Slot()
@@ -163,6 +166,9 @@ class ClipboardService(QObject):
             return
         digest = _digest(text)
         if digest == self._last_digest:
+            if self._text and self._state != State.TEXT:
+                # Same text as the one still shown: drop the old message.
+                self._set_result(State.TEXT, self._text)
             self._set_outcome(Outcome.UNCHANGED)
             return
         self._last_digest = digest

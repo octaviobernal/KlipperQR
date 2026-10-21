@@ -73,15 +73,17 @@ Mark each step Pass, Fail or Skip (with a reason) per environment.
    session on a fresh login before copying anything).
 2. Focus KlipperQR and press **Paste**.
 3. Expected: a friendly message ("The clipboard is empty or cannot be read
-   right now."), no QR code change, no crash.
+   right now."), the text field and QR code that were shown before stay unchanged
+   (if the field was empty, nothing appears), no crash.
 
 ### 5. Non-text clipboard
 
 1. Copy an image (see Setup).
 2. Focus KlipperQR and press **Paste**.
-3. Expected: the message "The clipboard does not contain text.", no crash.
+3. Expected: the message "The clipboard does not contain text." is shown, the
+   previously shown text and QR code are kept (not cleared), no crash.
 4. Focus away and back (automatic read). Expected: the previously shown text
-   is kept and no error is shown.
+   and QR code are still there and no error is shown.
 
 ### 6. Privacy spot check
 

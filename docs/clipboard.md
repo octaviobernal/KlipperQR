@@ -89,7 +89,7 @@ In-app hint (short, wrap in `qsTr()`):
 
 | Call | Used by | Behaviour |
 | --- | --- | --- |
-| `read()` | Paste button | Always a full result (text, empty, not text, failed); `outcome` = `EXPLICIT`. |
+| `read()` | Paste button | `outcome` = `EXPLICIT`. Text replaces the shown text. Empty, not text or failed only update `state`/`message`: the text and QR code already shown are kept, and the UI shows the friendly message next to them. |
 | `autoRead()` | window focus | Replaces `state`/`text` only if the text differs from the previous text read (`outcome` = `NEW_TEXT`). Same text = `UNCHANGED`; empty, not text, failed or the app's own change = `IGNORED`; in both cases `state`/`text` stay as they were. |
 | `copyImage(png)` | Copy image (#27) | Puts the PNG on the clipboard as image data (no text format), returns True/False, then calls `markOwnChange()` itself. |
 | `markOwnChange()` | `copyImage()` | Call right after putting data on the clipboard; `autoRead()` ignores that exact content. Other content is handled normally. |
@@ -98,10 +98,11 @@ In-app hint (short, wrap in `qsTr()`):
 
 Details of the markers:
 
-- `read()` sets the last-read marker to the digest of the text it shows, or
-  drops it when the result is empty, not text or failed. So if the user saw the
-  empty message and then copies the old text again, the next focus shows it.
-  `clear()` is different on purpose: it keeps the marker.
+- `read()` sets the last-read marker to the digest of the text it shows. When
+  the result is empty, not text or failed, the text stays on screen, so the
+  marker stays too. If the same text is on the clipboard at the next focus,
+  it is "unchanged" and the message disappears; different text counts as new.
+  `clear()` is different on purpose: it empties the text but keeps the marker.
 - `markOwnChange()` only changes a result when the app's own clipboard content
   includes text (for example Copy image adding a text format on some
   platforms). A pure image is already ignored by `autoRead()` because it is not

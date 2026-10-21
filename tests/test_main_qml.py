@@ -249,13 +249,14 @@ def test_paste_action_always_shows_result_and_hint():
     paste()
     assert field.property("text") == "hello"
 
-    # Empty clipboard: friendly message, no stale QR.
+    # Empty clipboard: friendly message, text and QR code are kept.
     put(None)
     paste()
-    assert window.property("showQr") is False
-    explanation = window.property("problemExplanation")
-    assert "clipboard is empty" in explanation
-    assert "press Paste" in explanation
+    assert window.property("showQr") is True
+    assert field.property("text") == "hello"
+    message = window.findChild(QObject, "clipboardMessage")
+    assert message.property("visible") is True
+    assert "clipboard is empty" in message.property("text")
 
     # Automatic read of the same state does not wipe an existing QR.
     put("again")

@@ -101,14 +101,34 @@ def test_states_are_distinct_messages(app):
     assert len(messages) == 3
 
 
-def test_text_is_cleared_when_clipboard_becomes_empty(app):
+def test_read_keeps_text_when_clipboard_empty_not_text_or_failed(app):
+    for state, mime, error in (
+        (State.EMPTY, QMimeData(), None),
+        (State.NOT_TEXT, image_mime(), None),
+        (State.FAILED, None, RuntimeError(SECRET)),
+    ):
+        fake = FakeClipboard(text_mime(SECRET))
+        service = ClipboardService(fake)
+        service.read()
+        fake.mime, fake.error = mime, error
+        texts = []
+        service.textChanged.connect(lambda: texts.append(1))
+        service.read()
+        assert service.state == state
+        assert service.text == SECRET
+        assert service.message
+        assert texts == []
+
+
+def test_read_text_replaces_kept_text(app):
     fake = FakeClipboard(text_mime(SECRET))
     service = ClipboardService(fake)
     service.read()
-    fake.mime = QMimeData()
+    fake.mime = image_mime()
     service.read()
-    assert service.state == State.EMPTY
-    assert service.text == ""
+    fake.mime = text_mime("other")
+    service.read()
+    assert (service.state, service.text, service.message) == (State.TEXT, "other", "")
 
 
 def test_signals_emitted_only_on_change(app):
@@ -361,7 +381,7 @@ def test_explicit_read_reports_empty_and_not_text(app):
     fake.mime = QMimeData()
     service.read()
     assert (service.outcome, service.state) == (Outcome.EXPLICIT, State.EMPTY)
-    assert service.text == "" and service.message
+    assert service.text == SECRET and service.message
     fake.mime = image_mime()
     service.read()
     assert (service.outcome, service.state) == (Outcome.EXPLICIT, State.NOT_TEXT)
@@ -443,22 +463,8 @@ def text_and_image_mime(text, color=0xFFFFFF):
     return mime
 
 
-def test_text_comes_back_after_empty_explicit_read(app):
-    fake = FakeClipboard(text_mime(SECRET))
-    service = ClipboardService(fake)
-    service.autoRead()  # (1) sees the text
-    fake.mime = QMimeData()
-    service.read()  # (2) cleared elsewhere, Paste shows the empty message
-    assert service.state == State.EMPTY
-    fake.mime = text_mime(SECRET)  # (3) copied again
-    service.autoRead()  # (4) refocus must show it
-    assert service.outcome == Outcome.NEW_TEXT
-    assert service.state == State.TEXT
-    assert service.text == SECRET
-
-
-def test_text_comes_back_after_not_text_or_failed_explicit_read(app):
-    for bad in (image_mime(), RuntimeError(SECRET)):
+def test_same_text_after_empty_or_bad_explicit_read_is_unchanged(app):
+    for bad in (QMimeData(), image_mime(), RuntimeError(SECRET)):
         fake = FakeClipboard(text_mime(SECRET))
         service = ClipboardService(fake)
         service.autoRead()
@@ -467,12 +473,35 @@ def test_text_comes_back_after_not_text_or_failed_explicit_read(app):
         else:
             fake.mime = bad
         service.read()
-        assert service.state in (State.NOT_TEXT, State.FAILED)
+        assert service.state != State.TEXT
+        assert service.text == SECRET  # still shown
         fake.error = None
         fake.mime = text_mime(SECRET)
         service.autoRead()
-        assert service.outcome == Outcome.NEW_TEXT
+        # Same text as the one still shown: nothing to replace, message gone.
+        assert service.outcome == Outcome.UNCHANGED
         assert service.state == State.TEXT
+        assert service.text == SECRET
+
+
+def test_different_text_after_empty_explicit_read_is_new(app):
+    fake = FakeClipboard(text_mime(SECRET))
+    service = ClipboardService(fake)
+    service.autoRead()
+    fake.mime = QMimeData()
+    service.read()
+    fake.mime = text_mime("other")
+    service.autoRead()
+    assert service.outcome == Outcome.NEW_TEXT
+    assert service.text == "other"
+
+
+def test_unchanged_after_clear_does_not_resurrect_text(app):
+    service = ClipboardService(FakeClipboard(text_mime(SECRET)))
+    service.autoRead()
+    service.clear()
+    service.autoRead()
+    assert service.text == "" and service.state == State.NOT_READ
 
 
 def test_own_change_with_text_is_ignored_only_when_marked(app):
