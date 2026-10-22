@@ -55,19 +55,25 @@ To pin it instead: right-click KlipperQR in the application launcher and pick
 1. Copy the text or link in any app.
 2. Press your shortcut. KlipperQR opens and reads the clipboard as soon as its
    window is active.
-3. If the window was already open, the shortcut may not raise it. Click the
-   window, or press **Paste** (Ctrl+Shift+V).
+3. If a KlipperQR window is already open, the shortcut opens a second
+   window. It does not raise the existing one (the app has no single-instance
+   handling). Close the extra window, or use the one you want and press
+   **Paste** (Ctrl+Shift+V).
 
 ## Verification status
 
+Tested by the maintainer on 2026-10-21, Plasma Wayland session.
+
 Menu names are written for Plasma 6 and can differ slightly between versions.
+The maintainer did not confirm that the names in this guide match their
+Plasma version exactly.
 
 | Step | Status |
 |---|---|
-| Route A (Add New > Application) on a Plasma Wayland session | Not verified yet, needs a person to run it |
-| Route B (Add New > Command) with the Flatpak command | Not verified yet |
-| Route B with the checkout command | Not verified yet |
-| Raising an already open window from the shortcut | Not verified yet |
-
-A person must follow these steps on a real Plasma Wayland session and record
-the result in issue #39, then update this table.
+| Launching the installed Flatpak from the KDE menu | Verified (2026-10-21, Plasma Wayland) |
+| `flatpak run io.github.octaviobernal.KlipperQR` from Konsole | Verified (2026-10-21, Plasma Wayland) |
+| Route A (Add New > Application): key press launches the app | Verified (2026-10-21, Plasma Wayland) |
+| Route B (Add New > Command) with the Flatpak command: key press launches the app | Verified (2026-10-21, Plasma Wayland) |
+| Route B with the checkout command | Not verified, not tested |
+| Shortcut while a window is already open (both routes) | Verified: a new window opens, the existing one is not raised |
+| Menu and button names match every Plasma version | Not verified |
