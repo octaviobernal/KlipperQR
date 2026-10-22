@@ -99,7 +99,7 @@ file and icon all use that same ID.
 | --- | --- |
 | `data/io.github.octaviobernal.KlipperQR.desktop` | `/app/share/applications/` |
 | `data/io.github.octaviobernal.KlipperQR.metainfo.xml` | `/app/share/metainfo/` |
-| `data/io.github.octaviobernal.KlipperQR.svg` (placeholder icon, GPL-3.0-or-later) | `/app/share/icons/hicolor/scalable/apps/` |
+| `data/io.github.octaviobernal.KlipperQR.svg` (app icon, GPL-3.0-or-later) | `/app/share/icons/hicolor/scalable/apps/` |
 
 Check them with:
 
