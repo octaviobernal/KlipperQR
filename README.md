@@ -49,6 +49,12 @@ clipboard text.
 Why: this rule protects your passwords, and it means KlipperQR needs no extra
 Flatpak permission. Details: [docs/clipboard.md](docs/clipboard.md).
 
+## Open it with a shortcut
+
+Plasma on Wayland does not let apps register global shortcuts, so you bind one
+in System Settings (Keyboard > Shortcuts). Steps for the Flatpak and for a
+checkout: [docs/shortcut.md](docs/shortcut.md).
+
 License: GPL-3.0-or-later.
 
 ## Run from a checkout
