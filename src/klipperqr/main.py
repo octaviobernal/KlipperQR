@@ -12,6 +12,14 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 APP_ID = "io.github.octaviobernal.KlipperQR"
 
+# Settings identity (issue #15). Qt builds the settings file path from these
+# two names (<config dir>/<ORGANIZATION_NAME>/<APPLICATION_NAME>.conf).
+# Fixed for 1.0: do NOT change them afterwards without a settings migration,
+# or users lose their saved settings. See docs/i18n-settings.md.
+# Setting the names does not use QSettings and writes no file by itself.
+ORGANIZATION_NAME = "io.github.octaviobernal"
+APPLICATION_NAME = "KlipperQR"
+
 
 def find_qml_main() -> Path:
     """Locate Main.qml in a source checkout or in an installed location.
@@ -97,9 +105,15 @@ def expose_services(engine):
     return clipboard_service, qr_service
 
 
+def set_app_identity(app) -> None:
+    """Set the organization and application names, once, at startup."""
+    app.setOrganizationName(ORGANIZATION_NAME)
+    app.setApplicationName(APPLICATION_NAME)
+
+
 def main() -> int:
     app = QGuiApplication(sys.argv)
-    app.setApplicationName("KlipperQR")
+    set_app_identity(app)
     app.setDesktopFileName(APP_ID)
     # Before the QML is loaded, so qsTr() sees the translation.
     install_translator(app)

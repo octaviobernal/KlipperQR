@@ -45,3 +45,19 @@ def test_context_services_survive_gc():
     result = obj.property("result")
     assert result.startswith("function,"), result
     assert app is not None
+
+
+def test_app_identity_is_fixed_for_1_0():
+    from klipperqr.main import (
+        APPLICATION_NAME,
+        ORGANIZATION_NAME,
+        set_app_identity,
+    )
+
+    # Part of the settings file path: changing these needs a migration (#15).
+    assert ORGANIZATION_NAME == "io.github.octaviobernal"
+    assert APPLICATION_NAME == "KlipperQR"
+    app = QGuiApplication.instance() or QGuiApplication([])
+    set_app_identity(app)
+    assert app.organizationName() == "io.github.octaviobernal"
+    assert app.applicationName() == "KlipperQR"

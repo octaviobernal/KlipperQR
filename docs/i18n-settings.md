@@ -78,8 +78,11 @@ because all strings are already wrapped, migration is cheap.
 `setApplicationName(...)` set once in `main.py`.
 
 - Wrap it in a Python `QObject` (Phase 4) so QML never touches files.
-- Organization name: for the real app use a value consistent with the app id
-  `io.github.octaviobernal` (decide in Phase 4; it becomes part of the file path).
+- Names (decided in #15, 2026-10-21): organization `io.github.octaviobernal`,
+  application `KlipperQR`, set in `main.py`. **Fixed for 1.0: do not change
+  them after 1.0 without a settings migration**, because they are part of the
+  settings file path. Expected Flatpak path (not yet verified, see below):
+  `~/.var/app/io.github.octaviobernal.KlipperQR/config/io.github.octaviobernal/KlipperQR.conf`.
 - Never store clipboard text, or anything derived from it, in settings.
 - No extra Flatpak permission is needed.
 - Not planned: KConfig integration, because there are no PySide6 bindings.
@@ -214,6 +217,8 @@ Checks #7 (CI) can add:
    follow the same locale, but a language missing in one will mix with English.
 6. **QSettings path depends on organization and application name.** Changing
    them later moves the file and loses users' settings (migration needed).
+   Names are now fixed (#15); the Flatpak path above is unverified until the
+   settings service (#19) writes a file.
 7. **Language picker.** Switching language at runtime needs
    `engine.retranslate()`; not tested. Plan on follow-the-system-locale only.
 

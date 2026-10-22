@@ -44,7 +44,7 @@ Reviewed `src/klipperqr/*.py`, `qml/*.qml` and `flatpak/`.
 | Logging / printing | None: no `print`, `logging`, `qDebug`, `console.*`. `clipboard_service.py` and `qr_service.py` state this in their docstrings. |
 | Exceptions | Caught with `except Exception` and details dropped; no message includes text. |
 | `repr()` | `ClipboardService` and `QrService` show state names only, never text. |
-| Settings | No `QSettings` or any other settings use. |
+| Settings | No `QSettings` or any other settings use, and no settings file is written. Only the organization and application names are set at startup (`main.py`, #15); that stores nothing. |
 | Files / temp files | The only writes are `write_bytes` in `save_qr` (QR image, to the path the user chose in the file dialog). No temp files. |
 | Comparing clipboard changes | Done with SHA-256 digests held in memory, not the text. |
 | Network | None in code; the Flatpak has no network permission. |
