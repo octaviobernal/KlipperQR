@@ -109,8 +109,8 @@ appstreamcli validate --no-net data/io.github.octaviobernal.KlipperQR.metainfo.x
 ```
 
 Screenshots live in `docs/screenshots/` and are referenced by their
-`raw.githubusercontent.com` URL on `main`. They are real captures of the app
-window (Breeze, no clipboard data). Until the files are pushed, the network
+`raw.githubusercontent.com` URL pinned to the `v1.0.0` tag. They are real captures of the app
+window (Breeze, no clipboard data). Until the tag is pushed, the network
 check (`appstreamcli validate` without `--no-net`) reports
-`screenshot-image-not-found`; CI stays offline. Before the Flathub submission,
-pin the URLs to a release tag so they cannot change under the store.
+`screenshot-image-not-found`; CI stays offline. For the
+Flathub submission steps see [flathub.md](flathub.md).

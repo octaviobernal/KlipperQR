@@ -34,11 +34,11 @@ SPDX-License-Identifier: CC0-1.0
   <url type="bugtracker">https://github.com/octaviobernal/KlipperQR/issues</url>
   <screenshots>
     <screenshot type="default">
-      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/main/docs/screenshots/main-wide.png</image>
+      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/v1.0.0/docs/screenshots/main-wide.png</image>
       <caption>A QR code next to the text it encodes, in a wide window</caption>
     </screenshot>
     <screenshot>
-      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/main/docs/screenshots/empty-narrow.png</image>
+      <image type="source">https://raw.githubusercontent.com/octaviobernal/KlipperQR/v1.0.0/docs/screenshots/empty-narrow.png</image>
       <caption>The empty state in a narrow window, as on a phone</caption>
     </screenshot>
   </screenshots>

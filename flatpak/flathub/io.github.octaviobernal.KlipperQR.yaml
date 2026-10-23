@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2026 Octavio Bernal <octavio.bernal.q@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+app-id: io.github.octaviobernal.KlipperQR
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+# PySide6 comes from the Flathub BaseApp (no pip, no network at build time).
+base: io.qt.PySide.BaseApp
+base-version: '6.11'
+command: klipperqr
+
+# Flathub copy of flatpak/io.github.octaviobernal.KlipperQR.yaml: identical
+# except the last source (git tag instead of the local checkout). Keep both in
+# sync (tests/test_flathub.py checks it). See docs/flathub.md.
+# See docs/flatpak.md for the justification of each permission.
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+
+modules:
+  # segno: pure-Python QR library, one wheel, no dependencies. Pinned URL +
+  # sha256 so the build needs no network beyond fetching this checked file
+  # (Flathub rule). See docs/qr-library.md for how to update it.
+  - name: python-segno
+    buildsystem: simple
+    build-commands:
+      - pip3 install --verbose --exists-action=i --no-index --prefix=${FLATPAK_DEST} --no-deps --no-build-isolation segno-1.6.6-py3-none-any.whl
+      # Unneeded command-line script of segno; the app only imports the library.
+      - rm -f ${FLATPAK_DEST}/bin/segno
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/d6/02/12c73fd423eb9577b97fc1924966b929eff7074ae6b2e15dd3d30cb9e4ae/segno-1.6.6-py3-none-any.whl
+        sha256: 28c7d081ed0cf935e0411293a465efd4d500704072cdb039778a2ab8736190c7
+
+  - name: klipperqr
+    buildsystem: simple
+    build-commands:
+      - install -d /app/lib/python3.13/site-packages/klipperqr
+      - install -m644 src/klipperqr/*.py /app/lib/python3.13/site-packages/klipperqr/
+      - install -d /app/share/klipperqr/qml
+      - install -m644 qml/*.qml /app/share/klipperqr/qml/
+      - install -Dm755 flatpak/klipperqr.sh /app/bin/klipperqr
+      # Compile the .ts catalogs to .qm (lrelease is in org.kde.Sdk); fails if none.
+      - sh flatpak/install-translations.sh /app/share/klipperqr/translations
+      - install -Dm644 data/io.github.octaviobernal.KlipperQR.desktop -t /app/share/applications
+      - install -Dm644 data/io.github.octaviobernal.KlipperQR.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 data/io.github.octaviobernal.KlipperQR.svg -t /app/share/icons/hicolor/scalable/apps
+    sources:
+      # Pinned to a release tag AND its commit hash (Flathub forbids moving
+      # sources). The maintainer fills in the commit after creating the tag:
+      #   git rev-parse v1.0.0^{commit}
+      - type: git
+        url: https://github.com/octaviobernal/KlipperQR.git
+        tag: v1.0.0
+        commit: REPLACE_WITH_COMMIT_HASH_OF_TAG_V1_0_0
