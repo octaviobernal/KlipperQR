@@ -54,4 +54,4 @@ modules:
       - type: git
         url: https://github.com/octaviobernal/KlipperQR.git
         tag: v1.0.0
-        commit: REPLACE_WITH_COMMIT_HASH_OF_TAG_V1_0_0
+        commit: e097db6e317b04fbefb49c67fe6493ecd7279c53
