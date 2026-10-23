@@ -165,9 +165,23 @@ CI runs `python3 scripts/check-translations.py`, which re-runs `pyside6-lupdate`
 in a temporary copy and fails if a committed `.ts` differs (ignoring
 `<location>` line numbers). Fix a failure with `--update`, translate the new
 entries, and commit. It only updates existing catalogs (a new language still
-needs the `-ts` command above once) and does not compile `.qm`. Not done yet:
-the `.ts` versus gettext `.po` decision is issue #16; wrapping
-strings as above is safe for both. There is no in-app language picker.
+needs the `-ts` command above once) and does not compile `.qm`. There is no
+in-app language picker.
+
+### Contributing a translation
+
+Format decision (issue #16): Qt `.ts` files are accepted for the Flathub 1.0
+release. gettext `.po` and KDE's translation infrastructure are not used; they
+may be reconsidered later if translators ask for them.
+
+To send a translation:
+
+1. Fork the repository and edit `translations/klipperqr_<lang>.ts` in Qt
+   Linguist (`pyside6-linguist`). For a new language, create it with the
+   `-ts` command above first.
+2. Run `python3 scripts/check-translations.py` and try it with the
+   `LANGUAGE=... LC_ALL=...` command above.
+3. Open a pull request with only the `.ts` file. Do not commit `.qm` files.
 
 ## Manual clipboard tests
 
