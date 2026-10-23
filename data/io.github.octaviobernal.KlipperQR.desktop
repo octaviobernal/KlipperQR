@@ -4,7 +4,7 @@
 Type=Application
 Name=KlipperQR
 GenericName=Clipboard QR Code Generator
-Comment=Turn copied text or links into a QR code
+Comment=Make a QR code from copied text
 Exec=klipperqr
 Icon=io.github.octaviobernal.KlipperQR
 Terminal=false

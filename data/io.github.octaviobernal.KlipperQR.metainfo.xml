@@ -6,7 +6,7 @@ SPDX-License-Identifier: CC0-1.0
 <component type="desktop-application">
   <id>io.github.octaviobernal.KlipperQR</id>
   <name>KlipperQR</name>
-  <summary>Turn copied text or links into a QR code</summary>
+  <summary>Make a QR code from copied text</summary>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <developer id="io.github.octaviobernal">
@@ -43,7 +43,7 @@ SPDX-License-Identifier: CC0-1.0
     </screenshot>
   </screenshots>
   <releases>
-    <release version="1.0.0" date="2026-10-20">
+    <release version="1.0.0" date="2026-10-22">
       <description>
         <p>First stable release: create a QR code from your clipboard or typed text, save it as PNG or SVG, or copy the image.</p>
       </description>
